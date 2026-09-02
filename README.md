@@ -250,7 +250,51 @@ mDNSを使用して、IPアドレスではなくホスト名でアクセスで�
 m5robot-00.local
 ```
 
-将来的にはWi-Fi設定をソースコードから分離し、別領域へ保存する予定です。
+Wi-FiのSSID / Passwordなどの機密情報は、ソースコードから分離しています。
+
+ローカル環境ではプロジェクトルートの `secrets/` ディレクトリに設定ファイルを配置します。
+
+```text
+secrets/
+└── secrets.h
+```
+
+`secrets/` は `.gitignore` によりGit管理対象から除外されるため、GitHubにはアップロードされません。
+
+将来的にはWi-Fi設定をESP32側のNVS / Preferencesへ保存し、スマートフォン等から設定できる仕組みへ移行する予定です。
+
+---
+
+## Security / Secrets
+
+本プロジェクトでは、将来的なGitHub Public化を想定し、機密情報をソースコードおよびGit管理対象から分離しています。
+
+以下のような情報はGitHubへアップロードしません。
+
+- Wi-Fi SSID
+- Wi-Fi Password
+- API Key
+- その他の個人環境固有の設定
+
+機密情報は以下のディレクトリで管理します。
+
+```text
+secrets/
+└── secrets.h
+```
+
+`secrets/` は `.gitignore` によりGit管理対象から除外しています。
+
+Publicリポジトリでは、実際の機密情報を含まないサンプル設定を用意します。
+
+```text
+secrets.example/
+└── secrets.h
+```
+
+サンプルファイルには実際のSSIDやPasswordなどの機密情報を記載しません。
+
+将来的には、機密情報をESP32のNVS / Preferencesへ保存する構成へ移行する予定です。
 
 ---
 
@@ -295,7 +339,7 @@ nvs,data,nvs,0x9000,0x5000,
 otadata,data,ota,0xE000,0x2000,
 app0,app,ota_0,0x10000,0x1C0000,
 app1,app,ota_1,0x1D0000,0x1C0000,
-littlefs,data,spiffs,0x390000,0x70000,
+spiffs,data,spiffs,0x390000,0x70000,
 ```
 
 LittleFSはWeb関連データなどの保存領域として使用します。
@@ -341,6 +385,7 @@ Espressif32
 - 走行特性MAP
 - WebSocket通信
 - mDNS
+- Wi-Fi機密情報のソースコードからの分離
 
 現在は、コード全体のレビュー・コメント・関数ヘッダ整備・レイヤ間の責務整理を進めています。
 
@@ -354,7 +399,7 @@ Espressif32
 2. レイヤ間・ファイル間の連携確認
 3. RAM使用量の最適化
 4. WebSocket / ブラウザ側の切断状態表示
-5. Wi-Fi SSID / Passwordの別領域保存
+5. Wi-Fi SSID / PasswordのNVS / Preferences保存
 6. Hostname等の設定管理整理
 7. OTA機能の実装
 8. 将来的なカメラ映像配信

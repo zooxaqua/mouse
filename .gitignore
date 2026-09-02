@@ -1,0 +1,9 @@
+#workspace
+.pio
+.vscode/
+
+# macOS
+.DS_Store
+
+# Private settings
+secrets/

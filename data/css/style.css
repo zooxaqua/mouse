@@ -1,0 +1,724 @@
+/* =========================================================
+   Global
+   ========================================================= */
+
+html,
+body {
+    width: 100%;
+}
+
+body {
+    color: #263238;
+}
+
+/* =========================================================
+   Debug Console
+   ========================================================= */
+
+.debug-console {
+    width: 100%;
+    max-width: 420px;
+
+    margin: 30px auto;
+}
+
+
+/* ---------------------------------------------------------
+   Title
+   --------------------------------------------------------- */
+
+.debug-console h2 {
+    margin-bottom: 8px;
+}
+
+
+/* ---------------------------------------------------------
+   Log Area
+   --------------------------------------------------------- */
+
+.debug-console-log {
+    width: 100%;
+    height: 140px;
+
+    padding: 10px;
+
+    border: 1px solid #d8dde2;
+    border-radius: 6px;
+
+    background: #fafafa;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    font-family: monospace;
+    font-size: 13px;
+    line-height: 1.5;
+
+    white-space: pre-wrap;
+
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+/* =========================================================
+   Controller
+   ========================================================= */
+
+.controller {
+    position: relative;
+
+    width: 100%;
+    max-width: 900px;
+
+    margin: 40px auto;
+    padding: 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+
+    touch-action: none;
+}
+
+
+/* =========================================================
+   Controller Button Common
+   ========================================================= */
+
+.controller button {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+
+    touch-action: none;
+
+    transition:
+        transform 0.05s ease,
+}
+
+.controller button:active {
+    transform: scale(0.94);
+}
+
+/* =========================================================
+   Button Focus
+   ========================================================= */
+
+.controller button:focus {
+    outline: none;
+    box-shadow: none;
+    filter: none;
+    opacity: 1;
+}
+
+/* =========================================================
+   D-Pad
+   ========================================================= */
+
+.dpad {
+    position: relative;
+
+    flex-shrink: 0;
+
+    width: 150px;
+    height: 150px;
+}
+
+
+.dpad button {
+    position: absolute;
+
+    width: 50px;
+    height: 50px;
+
+    padding: 0;
+    margin: 0;
+
+    border: none;
+    border-radius: 6px;
+
+    background: #374151;
+    color: #ffffff;
+}
+
+
+.dpad button:active {
+    background: #1f2933;
+}
+
+
+.dpad-up {
+    left: 50px;
+    top: 0;
+}
+
+.dpad-left {
+    left: 0;
+    top: 50px;
+}
+
+.dpad-right {
+    left: 100px;
+    top: 50px;
+}
+
+.dpad-down {
+    left: 50px;
+    top: 100px;
+}
+
+
+/* =========================================================
+   Joysticks
+   ========================================================= */
+
+.joystick {
+    flex-shrink: 0;
+
+    width: 170px;
+
+    text-align: center;
+}
+
+
+.joystick-label {
+    display: block;
+
+    margin-bottom: 10px;
+
+    font-size: 16px;
+    font-weight: 600;
+}
+
+
+.joystick-pad {
+    position: relative;
+
+    width: 150px;
+    height: 150px;
+
+    margin: 0 auto;
+
+    border: 2px solid #d8dde2;
+    border-radius: 50%;
+
+    background: #ffffff;
+
+    touch-action: none;
+}
+
+
+.joystick-knob {
+    position: absolute;
+
+    width: 70px;
+    height: 70px;
+
+    left: 40px;
+    top: 40px;
+
+    border-radius: 50%;
+
+    background: #374151;
+
+    pointer-events: none;
+}
+
+
+.joystick-value {
+    width: 150px;
+
+    margin-top: 12px;
+
+    font-size: 14px;
+    text-align: center;
+}
+
+
+/* =========================================================
+   A / B / X / Y
+   ========================================================= */
+
+.abxy {
+    position: relative;
+
+    flex-shrink: 0;
+
+    width: 180px;
+    height: 180px;
+}
+
+
+.abxy button {
+    position: absolute;
+
+    width: 56px;
+    height: 56px;
+
+    padding: 0;
+    margin: 0;
+
+    border: none;
+    border-radius: 50%;
+
+    color: #ffffff;
+
+    font-weight: 600;
+}
+
+
+/* ---------------------------------------------------------
+   Button Position
+   --------------------------------------------------------- */
+
+.button-y,
+.button-y:hover,
+.button-y:focus,
+.button-y:active {
+    left: 62px;
+    top: 0;
+    background-color: #20b486;
+}
+
+.button-x,
+.button-x:hover,
+.button-x:focus,
+.button-x:active {
+    left: 0;
+    top: 62px;
+    background-color: #4d78d8;
+}
+
+.button-b,
+.button-b:hover,
+.button-b:focus,
+.button-b:active {
+    left: 62px;
+    top: 124px;
+    background-color: #f2b233;
+}
+
+.button-a,
+.button-a:hover,
+.button-a:focus,
+.button-a:active {
+    left: 124px;
+    top: 62px;
+    background-color: #e85c5c;
+}
+
+
+/* =========================================================
+   Smartphone
+   ========================================================= */
+
+body.smartphone {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+}
+
+
+/* ---------------------------------------------------------
+   Smartphone Container
+   --------------------------------------------------------- */
+
+body.smartphone .container {
+    width: 100%;
+    max-width: none;
+
+    margin: 0;
+
+    padding: 10px;
+}
+
+
+/* ---------------------------------------------------------
+   Smartphone Controller
+   --------------------------------------------------------- */
+
+body.smartphone .controller {
+    width: 100%;
+    max-width: none;
+
+    margin: 20px 0;
+    padding: 10px;
+
+    gap: 20px;
+}
+
+
+/* ---------------------------------------------------------
+   Smartphone Joystick
+   --------------------------------------------------------- */
+
+body.smartphone .joystick {
+    width: 160px;
+}
+
+
+body.smartphone .joystick-pad {
+    width: 140px;
+    height: 140px;
+}
+
+body.smartphone .joystick-knob {
+    width: 50px;
+    height: 50px;
+
+    left: 45px;
+    top: 45px;
+}
+
+
+body.smartphone .joystick-value {
+    width: 140px;
+}
+
+
+/* ---------------------------------------------------------
+   Smartphone D-Pad
+   --------------------------------------------------------- */
+
+body.smartphone .dpad {
+    width: 176px;
+    height: 176px;
+    margin: 20px;
+}
+
+body.smartphone .dpad button {
+    width: 56px;
+    height: 56px;
+}
+
+body.smartphone .dpad-up {
+    left: 60px;
+    top: 0;
+}
+
+body.smartphone .dpad-left {
+    left: 0;
+    top: 60px;
+}
+
+body.smartphone .dpad-right {
+    left: 120px;
+    top: 60px;
+}
+
+body.smartphone .dpad-down {
+    left: 60px;
+    top: 120px;
+}
+
+
+/* ---------------------------------------------------------
+   Smartphone ABXY
+   --------------------------------------------------------- */
+
+body.smartphone .abxy {
+    width: 180px;
+    height: 180px;
+}
+
+body.smartphone .abxy button {
+    width: 56px;
+    height: 56px;
+}
+
+body.smartphone .button-y {
+    left: 62px;
+    top: 0;
+}
+
+body.smartphone .button-x {
+    left: 0;
+    top: 62px;
+}
+
+body.smartphone .button-b {
+    left: 62px;
+    top: 124px;
+}
+
+body.smartphone .button-a {
+    left: 124px;
+    top: 62px;
+}
+
+
+/* =========================================================
+   Responsive
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+    body.smartphone .controller {
+        justify-content: space-around;
+        gap: 10px;
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    body.smartphone .controller {
+        flex-wrap: wrap;
+        justify-content: center;
+
+        row-gap: 20px;
+        column-gap: 15px;
+    }
+
+}
+
+
+@media (max-width: 400px) {
+
+    body.smartphone .controller {
+        padding: 5px;
+
+        gap: 5px;
+    }
+
+    body.smartphone .joystick {
+        width: 120px;
+    }
+
+    body.smartphone .joystick-pad {
+        width: 110px;
+        height: 110px;
+    }
+
+    body.smartphone .joystick-knob {
+        width: 50px;
+        height: 50px;
+
+        left: 30px;
+        top: 30px;
+    }
+
+    body.smartphone .joystick-value {
+        width: 110px;
+    }
+
+}
+
+/* =========================================================
+   Smartphone Debug Console
+   ========================================================= */
+
+body.smartphone .debug-console {
+    margin: 5px auto;
+}
+
+body.smartphone .debug-console h2 {
+    margin-bottom: 4px;
+    font-size: 16px;
+}
+
+body.smartphone .debug-console-log {
+    height: 70px;
+    padding: 6px 8px;
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+/* =========================================================
+   Smartphone Landscape
+   ========================================================= */
+
+@media screen and (max-width: 900px) and (orientation: landscape) {
+
+    body.smartphone {
+        width: 100%;
+        min-height: 100svh;
+        overflow-x: hidden;
+    }
+
+
+    body.smartphone .container {
+        width: 100%;
+        max-width: none;
+
+        margin: 0;
+        padding: 8px 16px;
+    }
+
+
+    /* -----------------------------------------------------
+       Header
+       ----------------------------------------------------- */
+
+    body.smartphone h1 {
+        font-size: 28px;
+        margin-bottom: 4px;
+    }
+
+
+    body.smartphone > p {
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+
+
+    /* -----------------------------------------------------
+       Debug Console
+       ----------------------------------------------------- */
+
+    body.smartphone .debug-console {
+        width: 45%;
+        max-width: 400px;
+
+        margin: 4px auto;
+    }
+
+
+    body.smartphone .debug-console h2 {
+        font-size: 16px;
+        margin-bottom: 2px;
+    }
+
+
+    body.smartphone .debug-console-log {
+        height: 70px;
+
+        padding: 4px 6px;
+
+        font-size: 10px;
+        line-height: 1.2;
+    }
+
+
+    /* -----------------------------------------------------
+       Controller
+       ----------------------------------------------------- */
+
+    body.smartphone .controller {
+        width: 100%;
+        max-width: none;
+
+        margin: 10px auto 0;
+    }
+
+
+    /* -----------------------------------------------------
+       Joystick
+       ----------------------------------------------------- */
+
+    body.smartphone .joystick-pad {
+        width: 120px;
+        height: 120px;
+    }
+
+
+    body.smartphone .joystick-knob {
+        width: 44px;
+        height: 44px;
+
+        left: 38px;
+        top: 38px;
+    }
+
+
+    body.smartphone .joystick-value {
+        font-size: 12px;
+    }
+
+
+    body.smartphone .joystick-label {
+        font-size: 14px;
+    }
+
+
+    /* -----------------------------------------------------
+       D-Pad
+       ----------------------------------------------------- */
+
+    body.smartphone .dpad {
+        width: 144px;
+        height: 144px;
+
+        margin: 20px;
+    }
+
+
+    body.smartphone .dpad button {
+        width: 48px;
+        height: 48px;
+    }
+
+
+    body.smartphone .dpad-up {
+        left: 48px;
+        top: 0;
+    }
+
+
+    body.smartphone .dpad-left {
+        left: 0;
+        top: 48px;
+    }
+
+
+    body.smartphone .dpad-right {
+        left: 96px;
+        top: 48px;
+    }
+
+
+    body.smartphone .dpad-down {
+        left: 48px;
+        top: 96px;
+    }
+
+
+    /* -----------------------------------------------------
+       ABXY
+       ----------------------------------------------------- */
+
+    body.smartphone .abxy {
+        width: 150px;
+        height: 150px;
+
+        margin: 20px;
+    }
+
+
+    body.smartphone .abxy button {
+        width: 50px;
+        height: 50px;
+    }
+
+
+    body.smartphone .button-y {
+        left: 50px;
+        top: 0;
+    }
+
+
+    body.smartphone .button-x {
+        left: 0;
+        top: 50px;
+    }
+
+
+    body.smartphone .button-b {
+        left: 50px;
+        top: 100px;
+    }
+
+
+    body.smartphone .button-a {
+        left: 100px;
+        top: 50px;
+    }
+}

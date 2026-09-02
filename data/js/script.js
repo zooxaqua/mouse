@@ -3,6 +3,11 @@
 // =========================================================
 
 const HEARTBEAT_INTERVAL_MS = 200;
+const HEARTBEAT_MAX_MISSES = 5;
+
+let heartbeatStarted = false;
+let heartbeatMissCount = 0;
+let heartbeatWaitingForAck = false;
 
 // =========================================================
 // Joy Stick
@@ -48,15 +53,27 @@ function connectWebSocket()
     webSocket.onopen = function()
     {
         console.log("WebSocket connected");
+        infoLogs.push("[WebSocket] Connected");
 
-    lastSentLeftStickX = 0;
-    lastSentLeftStickY = 0;
-    lastSentRightStickX = 0;
-    lastSentRightStickY = 0;
+        heartbeatStarted = false;
+        heartbeatMissCount = 0;
+        heartbeatWaitingForAck = false;
 
-        document.getElementById(
-            "webSocketStatus"
-        ).value = "CONNECTED";
+        if (infoLogs.length > MAX_INFO_LOGS) {
+            infoLogs.shift();
+        }
+
+        updateDebugConsole();
+
+        lastSentLeftStickX = 0;
+        lastSentLeftStickY = 0;
+        lastSentRightStickX = 0;
+        lastSentRightStickY = 0;
+
+        const webSocketStatus = document.getElementById("webSocketStatus");
+        if (webSocketStatus !== null) {
+            webSocketStatus.value = "CONNECTED";
+        }
     };
 
 
@@ -67,6 +84,14 @@ function connectWebSocket()
         for (const message of messages) {
 
             if (message.length === 0) {
+                continue;
+            }
+
+            if (message === "heartbeat_ack") {
+                heartbeatStarted = true;
+                heartbeatWaitingForAck = false;
+                heartbeatMissCount = 0;
+                
                 continue;
             }
 
@@ -87,9 +112,19 @@ function connectWebSocket()
     {
         console.log("WebSocket disconnected");
 
-        document.getElementById(
-            "webSocketStatus"
-        ).value = "OFF";
+        infoLogs.push("[WebSocket] Browser Side Disconnected");
+
+        if (infoLogs.length > MAX_INFO_LOGS) {
+            infoLogs.shift();
+        }
+
+        updateDebugConsole();
+
+        const webSocketStatus = document.getElementById("webSocketStatus");
+
+        if (webSocketStatus !== null) {
+            webSocketStatus.value = "OFF";
+        }
 
         webSocket = null;
 
@@ -190,19 +225,48 @@ function sendWebSocket(message)
 // ---------------------------------------------------------
 // Heartbeat送信
 // ---------------------------------------------------------
-
 setInterval(
     function()
     {
-        if (webSocket !== null &&
-            webSocket.readyState === WebSocket.OPEN) {
+        try {
 
-            webSocket.send("heartbeat");
+            if (webSocket !== null &&
+                webSocket.readyState === WebSocket.OPEN) {
+
+                // ACK監視開始後、前回のACKがなければミスカウント
+                if (heartbeatStarted) {
+
+                    if (heartbeatWaitingForAck) {
+
+                        heartbeatMissCount++;
+                        //タイムアウト処理
+                        if (heartbeatMissCount >= HEARTBEAT_MAX_MISSES) {
+
+                            infoLogs.push("[WebSocket] Disconnected");
+                            updateDebugConsole();
+                            webSocket.close();
+                            return;
+                        }
+                    }
+                }
+
+                heartbeatWaitingForAck = true;
+
+                webSocket.send("heartbeat");
+            }
+
+        }
+        catch (error) {
+
+            infoLogs.push(
+                "[Heartbeat] ERROR: " + error
+            );
+
+            updateDebugConsole();
         }
     },
     HEARTBEAT_INTERVAL_MS
 );
-
 // ---------------------------------------------------------
 // Joystick送信
 // ---------------------------------------------------------

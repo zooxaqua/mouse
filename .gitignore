@@ -7,5 +7,4 @@
 
 # Private settings
 secrets/*
-!secrets/.gitkeep
 !secrets/secrets.example.h

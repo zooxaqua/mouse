@@ -51,7 +51,7 @@ namespace {
     // Webページから受信したボタン・D-Pad・スティック入力を
     // PlatformControllerInputへ変換する。
     // ---------------------------------------------------------
-    void processWebSocketInput(uint8_t* payload, size_t length)
+    void processWebSocketInput( uint8_t clientNum, uint8_t* payload, size_t length)
     {
         String message;
 
@@ -60,6 +60,7 @@ namespace {
         }
         
         if (message == "heartbeat") {
+            s_webSocket.sendTXT(clientNum, "heartbeat_ack");
             return;
         }
         // ---------------------------------------------------------
@@ -270,7 +271,6 @@ namespace {
                 s_webSocketTimeout = false;
                 s_lastWebSocketReceiveMs = millis();
                 
-                s_webSocket.sendTXT(clientNum, "WebSocket Connected");
                 break;
             }
 
@@ -298,7 +298,7 @@ namespace {
                 s_webSocketTimeout = false;
 
                 // ③ Controller入力処理へ渡す
-                processWebSocketInput(payload, length);
+                processWebSocketInput(clientNum, payload, length);
 
                 break;
             }

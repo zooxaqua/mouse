@@ -1,22 +1,22 @@
-**# M5Stamp-Pico 車両制御ソフトウェア アーキテクチャ（現行版）**
+**\*\*# M5Stamp-Pico 車両制御ソフトウェア アーキテクチャ（現行版）\*\***
 
-\> 本書は、現在の M5Stamp-Pico
+\\> 本書は、現在の M5Stamp-Pico
 
-\> 車両制御ソフトウェアの最新実装を基準として、アーキテクチャ、レイヤ責務、データフロー、周期実行、モーター制御、Controller
+\\> 車両制御ソフトウェアの最新実装を基準として、アーキテクチャ、レイヤ責務、データフロー、周期実行、モーター制御、Controller
 
-\> Input、通信、Debug
+\\> Input、通信、Debug
 
-\> Console、Config、実装状況を整理した現行版ドキュメントである。
+\\> Console、Config、実装状況を整理した現行版ドキュメントである。
 
-\>
+\\>
 
-\> 過去の設計経緯や旧案は扱わず、現在の実装・設計方針を記載する。
+\\> 過去の設計経緯や旧案は扱わず、現在の実装・設計方針を記載する。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 1. プロジェクト概要**
+**\*\*# 1. プロジェクト概要\*\***
 
-**## 1.1 目的**
+**\*\*## 1.1 目的\*\***
 
 M5Stamp-Pico Mate を使用し、Bluetooth コントローラまたは Web Controller
 
@@ -24,190 +24,257 @@ M5Stamp-Pico Mate を使用し、Bluetooth コントローラまたは Web Contr
 
 主な機能：
 
-\-   Bluetooth コントローラ入力
+\\-   Bluetooth コントローラ入力
 
-\-   HTTP/WebSocket による Web Controller 入力
+\\-   HTTP/WebSocket による Web Controller 入力
 
-\-   Bluetooth 優先の Controller Input 切替
+\\-   Bluetooth 優先の Controller Input 切替
 
-\-   左右2輪の差動駆動
+\\-   左右2輪の差動駆動
 
-\-   DRV8835 によるモーター制御
+\\-   DRV8835 によるモーター制御
 
-\-   加速・減速・ブレーキ制御
+\\-   加速・減速・ブレーキ制御
 
-\-   操舵量からの旋回半径計算
+\\-   操舵量からの旋回半径計算
 
-\-   速度に応じた旋回半径補正
+\\-   速度に応じた旋回半径補正
 
-\-   RGB LED による接続状態表示
+\\-   RGB LED による接続状態表示
 
-\-   Browser への Debug 情報送信
+\\-   Browser への Debug 情報送信
 
-\-   System によるライフサイクル管理
+\\-   System によるライフサイクル管理
 
-\-   System Config による周期処理管理
+\\-   System Config による周期処理管理
 
-**## 1.2 ハードウェア**
+**\*\*## 1.2 ハードウェア\*\***
 
-\-   MCU：ESP32
+\\-   MCU：ESP32
 
-\-   ボード：M5Stamp-Pico Mate
+\\-   ボード：M5Stamp-Pico Mate
 
-\-   Framework：Arduino
+\\-   Framework：Arduino
 
-\-   開発環境：VS Code + PlatformIO
+\\-   開発環境：VS Code + PlatformIO
 
-\-   Bluetooth：Bluepad32
+\\-   Bluetooth：Bluepad32
 
-\-   Controller：Nintendo Switch Pro Controller
+\\-   Controller：Nintendo Switch Pro Controller
 
-\-   Motor Driver：DRV8835
+\\-   Motor Driver：DRV8835
 
-\-   車両形式：左右独立2輪駆動（Differential Drive）
+\\-   車両形式：左右独立2輪駆動（Differential Drive）
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-# 1.3 Flash パーティション構成
+**# 1.3 Flash パーティション構成**
 
 M5Stamp-Pico Mate の ESP32 内蔵 4MB Flash は、OTA（Over-The-Air）更新に対応するため、
+
 Application 領域を APP0 / APP1 の2領域に分割する。
 
 また、設定値を保持する NVS、OTA の起動情報を保持する OTA Data、
+
 Web Controller のファイルを保存する LittleFS を配置する。
 
-## 1.3.1 Flash メモリマップ
+**## 1.3.1 Flash メモリマップ**
 
-```text
+\`\`\`text
+
 0x000000
+
     │
+
     │ 予約領域
+
     │
+
 0x009000 ┌─────────────┐
+
          │ NVS 20 KiB  │
+
 0x00E000 ├─────────────┤
+
          │ OTA Data    │
+
          │  8 KiB      │
+
 0x010000 ├─────────────┤
+
          │             │
+
          │    APP0     │
+
          │   1.75 MiB  │
+
          │             │
+
 0x1D0000 ├─────────────┤
+
          │             │
+
          │    APP1     │
+
          │   1.75 MiB  │
+
          │             │
+
 0x390000 ├─────────────┤
+
          │             │
+
          │  LittleFS   │
+
          │   448 KiB   │
+
          │             │
+
 0x400000 └─────────────┘
-```
 
-4MB Flash 全体のアドレス範囲は `0x000000 ～ 0x3FFFFF` である。
+\`\`\`
 
-## 1.3.2 パーティション定義
+4MB Flash 全体のアドレス範囲は \`0x000000 ～ 0x3FFFFF\` である。
 
-現在の `partitions.csv` は以下の構成とする。
+**## 1.3.2 パーティション定義**
 
-```csv
-# Name,Type,SubType,Offset,Size,Flags
+現在の \`partitions.csv\` は以下の構成とする。
+
+\`\`\`csv
+
+\# Name,Type,SubType,Offset,Size,Flags
+
 nvs,data,nvs,0x9000,0x5000,
+
 otadata,data,ota,0xE000,0x2000,
-app0,app,ota_0,0x10000,0x1C0000,
-app1,app,ota_1,0x1D0000,0x1C0000,
-littlefs,data,spiffs,0x390000,0x70000,
-```
 
-| Name | Type | SubType | Offset | Size | 容量 |
-|---|---|---|---|---|---:|
-| `nvs` | data | nvs | `0x9000` | `0x5000` | 20 KiB |
-| `otadata` | data | ota | `0xE000` | `0x2000` | 8 KiB |
-| `app0` | app | ota_0 | `0x10000` | `0x1C0000` | 1.75 MiB |
-| `app1` | app | ota_1 | `0x1D0000` | `0x1C0000` | 1.75 MiB |
-| `littlefs` | data | spiffs | `0x390000` | `0x70000` | 448 KiB |
+app0,app,ota\_0,0x10000,0x1C0000,
 
-### 各領域の役割
+app1,app,ota\_1,0x1D0000,0x1C0000,
 
-**NVS（20 KiB）**
+spiffs,data,spiffs,0x390000,0x70000,
+
+\`\`\`
+
+\| Name | Type | SubType | Offset | Size | 容量 |
+
+\|---|---|---|---|---|---:|
+
+\| \`nvs\` | data | nvs | \`0x9000\` | \`0x5000\` | 20 KiB |
+
+\| \`otadata\` | data | ota | \`0xE000\` | \`0x2000\` | 8 KiB |
+
+\| \`app0\` | app | ota\_0 | \`0x10000\` | \`0x1C0000\` | 1.75 MiB |
+
+\| \`app1\` | app | ota\_1 | \`0x1D0000\` | \`0x1C0000\` | 1.75 MiB |
+
+\| \`littlefs\` | data | spiffs | \`0x390000\` | \`0x70000\` | 448 KiB |
+
+**### 各領域の役割**
+
+**\*\*NVS（20 KiB）\*\***
 
 電源を切っても保持する設定値などを保存する。
 
 将来的には、以下のような永続設定を保存することを想定する。
 
-- Wi-Fi SSID
-- Wi-Fi Password
-- Hostname
-- その他の永続設定
+\- Wi-Fi SSID
 
-**OTA Data（8 KiB）**
+\- Wi-Fi Password
+
+\- Hostname
+
+\- その他の永続設定
+
+**\*\*OTA Data（8 KiB）\*\***
 
 OTA に使用する起動情報を保持する領域。
 
 ESP32 が APP0 / APP1 のどちらを次回起動するかを管理するために使用する。
 
-**APP0 / APP1（各1.75 MiB）**
+**\*\*APP0 / APP1（各1.75 MiB）\*\***
 
 Firmware / Application を格納する領域。
 
 OTA 更新では、現在実行中の Application とは別の領域へ新しい Firmware を書き込み、
+
 書き込み完了後に次回起動する Application 領域を切り替える。
 
 APP0 / APP1 は同一サイズとし、交互に OTA の書き込み先として使用する。
 
-**LittleFS（448 KiB）**
+**\*\*LittleFS（448 KiB）\*\***
 
 Application とは別に、Web Controller の HTML / CSS / JavaScript などを保存するファイルシステム領域。
 
 Firmware と Web UI のファイルを Flash 上で分離することで、それぞれを独立して管理できる構成とする。
 
-## 1.3.3 OTA 更新の考え方
+**## 1.3.3 OTA 更新の考え方**
 
 OTA は、現在実行している Firmware を直接上書きするのではなく、
+
 空いているもう一方の Application 領域へ新しい Firmware を書き込む構成とする。
 
-```text
+\`\`\`text
+
 現在起動中
+
 APP0
+
   │
+
   │ OTA書き込み
+
   ↓
+
 APP1
+
   │
+
   │ 書き込み完了
+
   ↓
+
 OTA Data 更新
+
   │
+
   │ 次回起動先を APP1 に変更
+
   ↓
+
 再起動
+
   │
+
   ↓
+
 APP1 起動
-```
+
+\`\`\`
 
 次回 OTA 更新では、APP1 から APP0 へ同様に更新する。
 
 この構成により、現在動作している Firmware を残したまま、
+
 別の Application 領域へ新しい Firmware を書き込める。
 
 OTA は今回のアーキテクチャで採用する構成の一つであり、
+
 今後の実装・学習対象とする。
 
 
-------------------------------------------------------------------------
 
-**# 2. ソフトウェア全体構成**
+\------------------------------------------------------------------------
 
-\`\`\` text
+**\*\*# 2. ソフトウェア全体構成\*\***
+
+\\\`\\\`\\\` text
 
 +--------------------------------------------------+
 
-\|                    System                        |
+\\|                    System                        |
 
-\|  Startup / LifeCycle / Scheduler / State        |
+\\|  Startup / LifeCycle / Scheduler / State        |
 
 +--------------------------+-----------------------+
 
@@ -217,21 +284,9 @@ OTA は今回のアーキテクチャで採用する構成の一つであり、
 
 +--------------------------------------------------+
 
-\|                  Application                     |
+\\|                  Application                     |
 
-\|  車両走行ロジック / 走行特性 / 適合値            |
-
-+--------------------------+-----------------------+
-
-                           |
-
-                           v
-
-+--------------------------------------------------+
-
-\|                     RTE                          |
-
-\|  論理IF / Controller抽象化 / HW制御変換          |
+\\|  車両走行ロジック / 走行特性 / 適合値            |
 
 +--------------------------+-----------------------+
 
@@ -241,9 +296,21 @@ OTA は今回のアーキテクチャで採用する構成の一つであり、
 
 +--------------------------------------------------+
 
-\|                   Platform                       |
+\\|                     RTE                          |
 
-\| GPIO / PWM / ADC / DAC / Bluetooth / Wi-Fi / HTTP|
+\\|  論理IF / Controller抽象化 / HW制御変換          |
+
++--------------------------+-----------------------+
+
+                           |
+
+                           v
+
++--------------------------------------------------+
+
+\\|                   Platform                       |
+
+\\| GPIO / PWM / ADC / DAC / Bluetooth / Wi-Fi / HTTP|
 
 +--------------------------+-----------------------+
 
@@ -253,49 +320,49 @@ OTA は今回のアーキテクチャで採用する構成の一つであり、
 
                     MCU / Hardware
 
-\`\`\`
+\\\`\\\`\\\`
 
-**## 2.1 レイヤの基本思想**
+**\*\*## 2.1 レイヤの基本思想\*\***
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 System
 
-    \= システム全体を動かす
+    \\= システム全体を動かす
 
 Application
 
-    \= 車両としてどう動くかを決める
+    \\= 車両としてどう動くかを決める
 
 RTE
 
-    \= 論理要求と Platform の制御方式を変換する
+    \\= 論理要求と Platform の制御方式を変換する
 
 Platform
 
-    \= MCU・通信・周辺機能を抽象化する
+    \\= MCU・通信・周辺機能を抽象化する
 
-\`\`\`
+\\\`\\\`\\\`
 
 原則：
 
-\-   Application は GPIO、PWM Channel、LEDC、DRV8835 を直接扱わない
+\\-   Application は GPIO、PWM Channel、LEDC、DRV8835 を直接扱わない
 
-\-   Application は Bluetooth / HTTP / WebSocket を知らない
+\\-   Application は Bluetooth / HTTP / WebSocket を知らない
 
-\-   RTE は Application と Platform の IF を接続する
+\\-   RTE は Application と Platform の IF を接続する
 
-\-   RTE は DRV8835 の IN/IN 制御方式を扱う
+\\-   RTE は DRV8835 の IN/IN 制御方式を扱う
 
-\-   Platform は車両概念を持たない
+\\-   Platform は車両概念を持たない
 
-\-   各レイヤ固有の適合値は Config に分離する
+\\-   各レイヤ固有の適合値は Config に分離する
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 3. ディレクトリ構成**
+**\*\*# 3. ディレクトリ構成\*\***
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 M5StampControl/
 
@@ -315,29 +382,29 @@ M5StampControl/
 
     +-- system/
 
-    \|   +-- System.cpp
+    \\|   +-- System.cpp
 
-    \|   +-- System.h
+    \\|   +-- System.h
 
-    \|   +-- SystemConfig.h
+    \\|   +-- SystemConfig.h
 
     |
 
     +-- application/
 
-    \|   +-- App.cpp
+    \\|   +-- App.cpp
 
-    \|   +-- App.h
+    \\|   +-- App.h
 
-    \|   +-- AppConfig.h
+    \\|   +-- AppConfig.h
 
     |
 
     +-- rte/
 
-    \|   +-- Rte.cpp
+    \\|   +-- Rte.cpp
 
-    \|   +-- Rte.h
+    \\|   +-- Rte.h
 
     |
 
@@ -363,11 +430,11 @@ M5StampControl/
 
         +-- PlatformHttp.h
 
-\`\`\`
+\\\`\\\`\\\`
 
 Platform は機能単位で内部モジュールを分割する。
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 Platform
 
@@ -377,35 +444,35 @@ Platform
 
  └─ PlatformHttp
 
-\`\`\`
+\\\`\\\`\\\`
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 4. System Layer**
+**\*\*# 4. System Layer\*\***
 
-**## 4.1 責務**
+**\*\*## 4.1 責務\*\***
 
-\-   Startup
+\\-   Startup
 
-\-   初期化順序
+\\-   初期化順序
 
-\-   System State 管理
+\\-   System State 管理
 
-\-   Scheduler
+\\-   Scheduler
 
-\-   周期処理
+\\-   周期処理
 
-\-   Shutdown
+\\-   Shutdown
 
-\-   Error 遷移
+\\-   Error 遷移
 
-\-   LED 状態処理
+\\-   LED 状態処理
 
 Application の走行判断は System では行わない。
 
-**## 4.2 SystemState**
+**\*\*## 4.2 SystemState\*\***
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
 enum class SystemState {
 
@@ -423,11 +490,11 @@ enum class SystemState {
 
 };
 
-\`\`\`
+\\\`\\\`\\\`
 
-**## 4.3 Startup**
+**\*\*## 4.3 Startup\*\***
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 System::init()
 
@@ -445,7 +512,7 @@ CycleRuntime 初期化
 
     ↓
 
-Platform::init(g\_platformConfig)
+Platform::init(g\\\_platformConfig)
 
     ↓
 
@@ -463,43 +530,43 @@ Rte::setLedRed()
 
 state = READY
 
-\`\`\`
+\\\`\\\`\\\`
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 5. System Scheduler**
+**\*\*# 5. System Scheduler\*\***
 
-**## 5.1 周期構成**
+**\*\*## 5.1 周期構成\*\***
 
 周期処理は System が一元管理する。
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
-using CycleFunction = void (\*)();
+using CycleFunction = void (\\\*)();
 
 struct CycleFunctions {
 
-    const CycleFunction\* functions;
+    const CycleFunction\\\* functions;
 
-    size\_t count;
+    size\\\_t count;
 
 };
 
 struct CycleConfig {
 
-    uint32\_t periodMs;
+    uint32\\\_t periodMs;
 
     CycleFunctions functions;
 
 };
 
-\`\`\`
+\\\`\\\`\\\`
 
-**## 5.2 現在の周期**
+**\*\*## 5.2 現在の周期\*\***
 
-**### 100ms Cycle**
+**\*\*### 100ms Cycle\*\***
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 Platform::updateInput
 
@@ -519,27 +586,27 @@ Rte::updateOutput
 
 Platform::updateOutput
 
-\`\`\`
+\\\`\\\`\\\`
 
-**### 1000ms Cycle**
+**\*\*### 1000ms Cycle\*\***
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 System::led
 
         ↓
 
-PlatformHttp::update
+Debug 情報送信
 
-\`\`\`
+\\\`\\\`\\\`
 
 Debug 情報送信は走行周期とは分離し、1000ms 周期で処理する。
 
-**## 5.3 Configによる実行順序**
+**\*\*## 5.3 Configによる実行順序\*\***
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
-constexpr CycleFunction g\_cycleA\_Functions[] = {
+constexpr CycleFunction g\\\_cycleA\\\_Functions[] = {
 
     Platform::updateInput,
 
@@ -553,63 +620,63 @@ constexpr CycleFunction g\_cycleA\_Functions[] = {
 
 };
 
-\`\`\`
+\\\`\\\`\\\`
 
 Scheduler 本体を変更せず、Config で周期と実行関数を変更できる。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 6. Application Layer**
+**\*\*# 6. Application Layer\*\***
 
 Application は車両としての走行制御を担当する。
 
 主な責務：
 
-\-   Controller 入力の車両動作への解釈
+\\-   Controller 入力の車両動作への解釈
 
-\-   ベースモータ出力
+\\-   ベースモータ出力
 
-\-   加速・減速・ブレーキ特性
+\\-   加速・減速・ブレーキ特性
 
-\-   旋回半径
+\\-   旋回半径
 
-\-   速度による旋回半径補正
+\\-   速度による旋回半径補正
 
-\-   左右モータ出力決定
+\\-   左右モータ出力決定
 
 Application はハードウェア詳細を知らない。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 7. Application の入力**
+**\*\*# 7. Application の入力\*\***
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
 struct DriveInput {
 
-    int8\_t  output;
+    int8\\\_t  output;
 
-    int16\_t steeringRatio;
+    int16\\\_t steeringRatio;
 
     bool    brake;
 
 };
 
-\`\`\`
+\\\`\\\`\\\`
 
   項目              意味               範囲
 
-  \----------------- ------------------ --------------
+  \\----------------- ------------------ --------------
 
-  \`output\`          車体基準出力要求   -100～+100
+  \\\`output\\\`          車体基準出力要求   -100～+100
 
-  \`steeringRatio\`   操舵操作量         -100～+100
+  \\\`steeringRatio\\\`   操舵操作量         -100～+100
 
-  \`brake\`           ブレーキ要求       true / false
+  \\\`brake\\\`           ブレーキ要求       true / false
 
 現在の入力：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 右スティックY → output
 
@@ -619,13 +686,13 @@ A             → output = +100
 
 B             → brake = true
 
-\`\`\`
+\\\`\\\`\\\`
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 8. Application 走行処理**
+**\*\*# 8. Application 走行処理\*\***
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 Rte::getDriveInput()
 
@@ -655,19 +722,19 @@ DriveOutput
 
         ↓
 
-Rte::setDriveCommand()
+Rte::setDriveOutput()
 
-\`\`\`
+\\\`\\\`\\\`
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 9. Motor Output 制御**
+**\*\*# 9. Motor Output 制御\*\***
 
-**## 9.1 加速**
+**\*\*## 9.1 加速\*\***
 
 前周期の出力から目標出力へ徐々に追従する。
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 currentOutput
 
@@ -683,35 +750,35 @@ acceleration MAP
 
 targetOutput
 
-\`\`\`
+\\\`\\\`\\\`
 
-**## 9.2 減速**
+**\*\*## 9.2 減速\*\***
 
 目標値へ向けて減速 MAP を使用する。
 
-**## 9.3 ブレーキ**
+**\*\*## 9.3 ブレーキ\*\***
 
-\`DriveInput.brake == true\` の場合は通常の減速 MAP ではなく専用
+\\\`DriveInput.brake == true\\\` の場合は通常の減速 MAP ではなく専用
 
-\`g\_brakeMap\` を使用する。
+\\\`g\\\_brakeMap\\\` を使用する。
 
 ブレーキ特性と DRV8835 の電気的 BRAKE 動作は別概念として扱う。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 10. Application Config**
+**\*\*# 10. Application Config\*\***
 
 車体トレッド：
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
-constexpr uint16\_t g\_track = 160;
+constexpr uint16\\\_t g\\\_track = 160;
 
-\`\`\`
+\\\`\\\`\\\`
 
 加速 MAP：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 0%   -> 2
 
@@ -725,11 +792,11 @@ constexpr uint16\_t g\_track = 160;
 
 100% -> 20
 
-\`\`\`
+\\\`\\\`\\\`
 
 減速 MAP：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 0%   -> 15
 
@@ -743,11 +810,11 @@ constexpr uint16\_t g\_track = 160;
 
 100% -> 1
 
-\`\`\`
+\\\`\\\`\\\`
 
 ブレーキ MAP：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 0%   -> 50
 
@@ -761,45 +828,45 @@ constexpr uint16\_t g\_track = 160;
 
 100% -> 20
 
-\`\`\`
+\\\`\\\`\\\`
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 11. MAP補間**
+**\*\*# 11. MAP補間\*\***
 
 MAP は線形補間を使用する。
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
-template \<size\_t N>
+template \\\<size\\\_t N>
 
-int8\_t interpolateMap(
+int8\\\_t interpolateMap(
 
-    const AppConfig::MapPoint\_int8 (&map)[N],
+    const AppConfig::MapPoint\\\_int8 (&map)[N],
 
-    int8\_t x);
+    int8\\\_t x);
 
-\`\`\`
+\\\`\\\`\\\`
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
-template \<size\_t N>
+template \\\<size\\\_t N>
 
-uint16\_t interpolateMap(
+uint16\\\_t interpolateMap(
 
-    const AppConfig::MapPoint\_int16 (&map)[N],
+    const AppConfig::MapPoint\\\_int16 (&map)[N],
 
-    int16\_t x);
+    int16\\\_t x);
 
-\`\`\`
+\\\`\\\`\\\`
 
 テンプレートにより配列要素数を自動取得する。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 12. 旋回半径制御**
+**\*\*# 12. 旋回半径制御\*\***
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 steeringRatio
 
@@ -823,11 +890,11 @@ radiusCorrectionMap
 
 final turningRadius
 
-\`\`\`
+\\\`\\\`\\\`
 
 turningRadius MAP：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 0%        10000mm
 
@@ -841,13 +908,13 @@ turningRadius MAP：
 
 100%        700mm
 
-\`\`\`
+\\\`\\\`\\\`
 
-操舵量0%は \`turningRadius == 0\` として直進扱いする。
+操舵量0%は \\\`turningRadius == 0\\\` として直進扱いする。
 
 速度による補正：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 motor output   correction
 
@@ -863,51 +930,51 @@ motor output   correction
 
 100%           40%
 
-\`\`\`
+\\\`\\\`\\\`
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
-finalRadius = baseRadius \* (100 + correctionRatio) / 100;
+finalRadius = baseRadius \\\* (100 + correctionRatio) / 100;
 
-\`\`\`
+\\\`\\\`\\\`
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 13. calculateDriveOutput()**
+**\*\*# 13. calculateDriveOutput()\*\***
 
 差動二輪では、
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 outerRadius = R + T/2
 
 innerRadius = R - T/2
 
-\`\`\`
+\\\`\\\`\\\`
 
 内外輪比：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 inner / outer
 
-\= (R - T/2) / (R + T/2)
+\\= (R - T/2) / (R + T/2)
 
-\`\`\`
+\\\`\\\`\\\`
 
 直進：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 Right = baseMotorOutput
 
 Left  = baseMotorOutput
 
-\`\`\`
+\\\`\\\`\\\`
 
 旋回：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 steeringRatio > 0
 
@@ -921,63 +988,63 @@ steeringRatio < 0
 
     Left  = outer
 
-\`\`\`
+\\\`\\\`\\\`
 
-\`turningRadius < track / 2\`
+\\\`turningRadius < track / 2\\\`
 
 の領域では内側半径が負になるため、内側モーターを逆回転させず、最小半径では内側出力を0%とする方針。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 14. DriveOutput**
+**\*\*# 14. DriveOutput\*\***
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
 struct DriveOutput {
 
-    int8\_t motorRightOutput;
+    int8\\\_t motorRightOutput;
 
-    int8\_t motorLeftOutput;
+    int8\\\_t motorLeftOutput;
 
 };
 
-\`\`\`
+\\\`\\\`\\\`
 
 Application の計算結果として使用し、RTE の Drive Command IF へ渡す。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 15. RTE Layer**
+**\*\*# 15. RTE Layer\*\***
 
 RTE は Application と Platform の間の変換を担当する。
 
 主な役割：
 
-\-   Platform Controller Input の取得
+\\-   Platform Controller Input の取得
 
-\-   Controller 情報の論理化
+\\-   Controller 情報の論理化
 
-\-   \`DriveInput\` 生成
+\\-   \\\`DriveInput\\\` 生成
 
-\-   Drive Command の受け取り
+\\-   Drive Command の受け取り
 
-\-   DRV8835 IN/IN 変換
+\\-   DRV8835 IN/IN 変換
 
-\-   LED IF
+\\-   LED IF
 
-\-   Controller Input Source 選択
+\\-   Controller Input Source 選択
 
-\-   Debug 情報送信 API
+\\-   Debug 情報送信 API
 
-\-   Shutdown Request
+\\-   Shutdown Request
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 16. Controller Input**
+**\*\*# 16. Controller Input\*\***
 
-Platform から RTE へは \`PlatformControllerData\` を渡す。
+Platform から RTE へは \\\`PlatformControllerData\\\` を渡す。
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 Left Stick X/Y
 
@@ -1001,17 +1068,17 @@ Misc Buttons Pressed
 
 Misc Buttons Released
 
-\`\`\`
+\\\`\\\`\\\`
 
 Bluetooth と HTTP/WebSocket の入力は、どちらも同じ
 
-\`PlatformControllerData\` に変換する。
+\\\`PlatformControllerData\\\` に変換する。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 17. RTE 論理入力IF**
+**\*\*# 17. RTE 論理入力IF\*\***
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
 ButtonState getButtonState(AppButton button);
 
@@ -1023,11 +1090,11 @@ StickValue getStickValue(AppStick stick);
 
 DriveInput getDriveInput();
 
-\`\`\`
+\\\`\\\`\\\`
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
-enum class ButtonState : uint8\_t {
+enum class ButtonState : uint8\\\_t {
 
     NONE,
 
@@ -1039,27 +1106,27 @@ enum class ButtonState : uint8\_t {
 
 };
 
-\`\`\`
+\\\`\\\`\\\`
 
 Application は Controller の物理ビット値を直接扱わない。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 18. RTE Controller Input Source**
+**\*\*# 18. RTE Controller Input Source\*\***
 
 入力ソースの優先順位：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 Bluetooth > HTTP > NONE
 
-\`\`\`
+\\\`\\\`\\\`
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
 if (PlatformBluetooth::isControllerConnected()) {
 
-    s\_controllerInput =
+    s\\\_controllerInput =
 
         PlatformBluetooth::getControllerInput();
 
@@ -1067,7 +1134,7 @@ if (PlatformBluetooth::isControllerConnected()) {
 
 else if (PlatformHttp::isControllerConnected()) {
 
-    s\_controllerInput =
+    s\\\_controllerInput =
 
         PlatformHttp::getControllerInput();
 
@@ -1075,33 +1142,33 @@ else if (PlatformHttp::isControllerConnected()) {
 
 else {
 
-    s\_controllerInput = {};
+    s\\\_controllerInput = {};
 
 }
 
-\`\`\`
+\\\`\\\`\\\`
 
-この選択は RTE の責務である。
+Bluetooth / HTTP の入力ソース選択は PlatformControllerInput の責務であり、RTE は統一された PlatformControllerData を取得する。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 19. RTE Output / VehicleCommand**
+**\*\*# 19. RTE Output / VehicleCommand\*\***
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
 void setDriveCommand(
 
     VehicleCommand command,
 
-    int8\_t motorRightOutput,
+    int8\\\_t motorRightOutput,
 
-    int8\_t motorLeftOutput);
+    int8\\\_t motorLeftOutput);
 
-\`\`\`
+\\\`\\\`\\\`
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
-enum class VehicleCommand : uint8\_t {
+enum class VehicleCommand : uint8\\\_t {
 
     STOP,
 
@@ -1113,15 +1180,15 @@ enum class VehicleCommand : uint8\_t {
 
 };
 
-\`\`\`
+\\\`\\\`\\\`
 
 左右出力は -100～+100 に制限して保持する。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 20. DRV8835 IN/IN変換**
+**\*\*# 20. DRV8835 IN/IN変換\*\***
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 Motor 1
 
@@ -1135,43 +1202,43 @@ Motor 2
 
     BIN2
 
-\`\`\`
+\\\`\\\`\\\`
 
 正方向：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 IN1 = Duty
 
 IN2 = 0
 
-\`\`\`
+\\\`\\\`\\\`
 
 逆方向：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 IN1 = 0
 
 IN2 = Duty
 
-\`\`\`
+\\\`\\\`\\\`
 
 STOP：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 IN1 = 0
 
 IN2 = 0
 
-\`\`\`
+\\\`\\\`\\\`
 
 電気的 BRAKE は専用仕様を確認した上で実装する。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 21. Platform Layer**
+**\*\*# 21. Platform Layer\*\***
 
 Platform は ESP32 / Arduino / Bluepad32 / Wi-Fi / HTTP / WebSocket 等の
 
@@ -1179,37 +1246,37 @@ MCU・通信方式固有機能を吸収する。
 
 対象：
 
-\-   GPIO
+\\-   GPIO
 
-\-   PWM / LEDC
+\\-   PWM / LEDC
 
-\-   ADC
+\\-   ADC
 
-\-   DAC
+\\-   DAC
 
-\-   PCNT
+\\-   PCNT
 
-\-   NeoPixel / SK6812
+\\-   NeoPixel / SK6812
 
-\-   Bluetooth / Bluepad32
+\\-   Bluetooth / Bluepad32
 
-\-   Wi-Fi
+\\-   Wi-Fi
 
-\-   mDNS
+\\-   mDNS
 
-\-   HTTP Server
+\\-   HTTP Server
 
-\-   WebSocket Server
+\\-   WebSocket Server
 
-\-   Controller 接続状態
+\\-   Controller 接続状態
 
-\-   Debug 情報送信
+\\-   Debug 情報送信
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 22. Platform 内部モジュール**
+**\*\*# 22. Platform 内部モジュール\*\***
 
-\`\`\` text
+\\\`\\\`\\\` text
 
                          Platform
 
@@ -1229,17 +1296,17 @@ MCU・通信方式固有機能を吸収する。
 
          Bluepad32        Wi-Fi       HTTP/WebSocket
 
-\`\`\`
+\\\`\\\`\\\`
 
-\`Platform.cpp\` は Platform 内部モジュールを統括する。
+\\\`Platform.cpp\\\` は Platform 内部モジュールを統括する。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 23. PlatformBluetooth**
+**\*\*# 23. PlatformBluetooth\*\***
 
-\`PlatformBluetooth\` は Bluepad32 固有処理を担当する。
+\\\`PlatformBluetooth\\\` は Bluepad32 固有処理を担当する。
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 Bluepad32
 
@@ -1255,25 +1322,25 @@ PlatformControllerData
 
 RTE
 
-\`\`\`
+\\\`\\\`\\\`
 
 担当：
 
-\-   \`BP32.update()\`
+\\-   \\\`BP32.update()\\\`
 
-\-   接続 / 切断
+\\-   接続 / 切断
 
-\-   Controller 入力取得
+\\-   Controller 入力取得
 
-\-   Stick 正規化
+\\-   Stick 正規化
 
-\-   Button / D-Pad / Misc Button
+\\-   Button / D-Pad / Misc Button
 
-\-   Pressed / Released 生成
+\\-   Pressed / Released 生成
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 24. PlatformWifi**
+**\*\*# 24. PlatformWifi\*\***
 
 Wi-Fi 接続と mDNS を担当する。
 
@@ -1281,7 +1348,7 @@ Wi-Fi 接続と mDNS を担当する。
 
 将来的な STA / AP 両対応を想定する。
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 PlatformWifi
 
@@ -1295,39 +1362,39 @@ PlatformWifi
 
       └── M5Stamp-Pico Access Point
 
-\`\`\`
+\\\`\\\`\\\`
 
 SSID / Password は PlatformConfig に持たせない。
 
-現在は \`const\` による仮設定を使用する。
+現在は \\\`const\\\` による仮設定を使用する。
 
 mDNS は PlatformWifi の責務。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 25. PlatformHttp**
+**\*\*# 25. PlatformHttp\*\***
 
 PlatformHttp は以下を担当する。
 
-\-   LittleFS
+\\-   LittleFS
 
-\-   HTTP Server
+\\-   HTTP Server
 
-\-   WebSocket Server
+\\-   WebSocket Server
 
-\-   Web Controller Input
+\\-   Web Controller Input
 
-\-   WebSocket 接続状態
+\\-   WebSocket 接続状態
 
-\-   WebSocket Timeout
+\\-   WebSocket Timeout
 
-\-   Debug 情報送信
+\\-   Debug 情報送信
 
-\-   Browser との情報通信
+\\-   Browser との情報通信
 
 Controller Input：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 Browser
 
@@ -1347,11 +1414,11 @@ PlatformControllerData
 
 RTE
 
-\`\`\`
+\\\`\\\`\\\`
 
 Debug 情報：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 RTE
 
@@ -1367,15 +1434,15 @@ WebSocket
 
 Browser
 
-\`\`\`
+\\\`\\\`\\\`
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 26. HTTP Controller Input**
+**\*\*# 26. HTTP Controller Input\*\***
 
 現在実装する入力：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 A / B / X / Y
 
@@ -1387,11 +1454,11 @@ Left Stick
 
 Right Stick
 
-\`\`\`
+\\\`\\\`\\\`
 
 現時点では以下を実装しない：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 L1 / R1
 
@@ -1401,17 +1468,21 @@ L3 / R3
 
 HOME / MINUS / PLUS / PICT
 
-\`\`\`
+\\\`\\\`\\\`
 
 必要なボタンのみを実装対象とする。
 
-\------------------------------------------------------------------------
+HTTP の Button / D-Pad は Bluetooth と同じく、現在状態と前回状態との差分から
+`Pressed` / `Released` を生成する。これにより RTE が受け取る
+`PlatformControllerData` の状態モデルを Bluetooth / HTTP で統一する。
 
-**# 27. HTTP Button / D-Pad 状態モデル**
+\\------------------------------------------------------------------------
+
+**\*\*# 27. HTTP Button / D-Pad 状態モデル\*\***
 
 現在状態とイベント状態を分離する。
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 pressed
 
@@ -1437,33 +1508,33 @@ current state = OFF
 
 released event = ON
 
-\`\`\`
+\\\`\\\`\\\`
 
 RTE からは、
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 PRESSED → HOLD → NONE
 
-\`\`\`
+\\\`\\\`\\\`
 
 として扱う。
 
-\`buttons\` / \`dpad\` は現在状態を保持する。
+\\\`buttons\\\` / \\\`dpad\\\` は現在状態を保持する。
 
-\`buttonsPressed\` / \`buttonsReleased\` / \`dpadPressed\` / \`dpadReleased\`
+\\\`buttonsPressed\\\` / \\\`buttonsReleased\\\` / \\\`dpadPressed\\\` / \\\`dpadReleased\\\`
 
 はイベントとして1周期だけ有効になる。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 28. HTTP Stick 状態モデル**
+**\*\*# 28. HTTP Stick 状態モデル\*\***
 
 WebSocket で最後に受信した値を保持する。
 
-\`\`\` text
+\\\`\\\`\\\` text
 
-stick\:left:80:-20
+stick\\\:left:80:-20
 
         ↓
 
@@ -1473,13 +1544,13 @@ leftStick = (80, -20)
 
 次のメッセージまで保持
 
-\`\`\`
+\\\`\\\`\\\`
 
-ブラウザが \`0:0\` を送信するとニュートラルへ戻る。
+ブラウザが \\\`0:0\\\` を送信するとニュートラルへ戻る。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 29. WebSocket Timeout / Heartbeat**
+**\*\*# 29. WebSocket Timeout / Heartbeat\*\***
 
 Heartbeat は接続維持確認用であり、Controller Input ではない。
 
@@ -1487,7 +1558,7 @@ Heartbeat は接続維持確認用であり、Controller Input ではない。
 
 一定時間受信しなかった場合：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 WebSocket Timeout
 
@@ -1499,105 +1570,105 @@ connected = false
 
 Controller Input = {}
 
-\`\`\`
+\\\`\\\`\\\`
 
 切断時も安全側へ戻す。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 30. Platform PWM Interface**
+**\*\*# 30. Platform PWM Interface\*\***
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
-enum class PwmOutput : uint8\_t {
+enum class PwmOutput : uint8\\\_t {
 
-    MOTOR1\_IN1,
+    MOTOR1\\\_IN1,
 
-    MOTOR1\_IN2,
+    MOTOR1\\\_IN2,
 
-    MOTOR2\_IN1,
+    MOTOR2\\\_IN1,
 
-    MOTOR2\_IN2
+    MOTOR2\\\_IN2
 
 };
 
-\`\`\`
+\\\`\\\`\\\`
 
 上位レイヤは GPIO 番号を直接指定しない。
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
 Platform::setPwmDuty(
 
-    PwmOutput::MOTOR1\_IN1,
+    PwmOutput::MOTOR1\\\_IN1,
 
     dutyPercent);
 
-\`\`\`
+\\\`\\\`\\\`
 
 PlatformConfig により実 GPIO / PWM Channel へ変換する。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 31. Platform Output Buffer**
+**\*\*# 31. Platform Output Buffer\*\***
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
 struct OutputBuffer {
 
-    uint8\_t m1In1Duty;
+    uint8\\\_t m1In1Duty;
 
-    uint8\_t m1In2Duty;
+    uint8\\\_t m1In2Duty;
 
-    uint8\_t m2In1Duty;
+    uint8\\\_t m2In1Duty;
 
-    uint8\_t m2In2Duty;
+    uint8\\\_t m2In2Duty;
 
-    uint8\_t dacValue;
+    uint8\\\_t dacValue;
 
     RgbColor ledColor;
 
 };
 
-\`\`\`
+\\\`\\\`\\\`
 
-\`Platform::updateOutput()\` で物理ハードウェアへ反映する。
+\\\`Platform::updateOutput()\\\` で物理ハードウェアへ反映する。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 32. Platform Input Buffer**
+**\*\*# 32. Platform Input Buffer\*\***
 
 Platform はハードウェア入力を内部バッファへ保持する。
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
 struct InputBuffer {
 
     bool buttonPressed;
 
-    uint16\_t m1CurrentRaw;
+    uint16\\\_t m1CurrentRaw;
 
-    uint16\_t m2CurrentRaw;
+    uint16\\\_t m2CurrentRaw;
 
-    int32\_t enc1Count;
+    int32\\\_t enc1Count;
 
-    int32\_t enc2Count;
+    int32\\\_t enc2Count;
 
 };
 
-\`\`\`
+\\\`\\\`\\\`
 
 Current Sense / Encoder は準備段階。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 33. PlatformConfig**
+**\*\*# 33. PlatformConfig\*\***
 
 PlatformConfig は Platform が所有する物理割り当て設定。
 
 主な項目：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 motor1In1
 
@@ -1635,13 +1706,13 @@ i2cBus
 
 uartComm
 
-\`\`\`
+\\\`\\\`\\\`
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 34. 現在の物理ピン割り当て**
+**\*\*# 34. 現在の物理ピン割り当て\*\***
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 M5Stamp-Pico Mate     DRV8835
 
@@ -1653,33 +1724,33 @@ G21  ---------------> BIN1
 
 G22  ---------------> BIN2
 
-\`\`\`
+\\\`\\\`\\\`
 
-\`\`\` text
+\\\`\\\`\\\` text
 
-MOTOR1\_IN1 : GPIO26 / CH0 / 5kHz / 8bit
+MOTOR1\\\_IN1 : GPIO26 / CH0 / 5kHz / 8bit
 
-MOTOR1\_IN2 : GPIO18 / CH1 / 5kHz / 8bit
+MOTOR1\\\_IN2 : GPIO18 / CH1 / 5kHz / 8bit
 
-MOTOR2\_IN1 : GPIO21 / CH2 / 5kHz / 8bit
+MOTOR2\\\_IN1 : GPIO21 / CH2 / 5kHz / 8bit
 
-MOTOR2\_IN2 : GPIO22 / CH3 / 5kHz / 8bit
+MOTOR2\\\_IN2 : GPIO22 / CH3 / 5kHz / 8bit
 
-\`\`\`
+\\\`\\\`\\\`
 
 オンボード：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 G27 : SK6812 RGB LED
 
 G39 : User Button / Active LOW
 
-\`\`\`
+\\\`\\\`\\\`
 
 その他：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 G34 : Encoder1 A
 
@@ -1687,65 +1758,65 @@ G35 : Encoder2 A
 
 G25 : DAC1
 
-\`\`\`
+\\\`\\\`\\\`
 
 G21 はモーター出力に使用しているため I2C SDA として同時使用しない。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 35. PinConfig**
+**\*\*# 35. PinConfig\*\***
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
 struct PinConfig {
 
-    uint8\_t gpioPin;
+    uint8\\\_t gpioPin;
 
     PinModeType mode;
 
-    uint8\_t pwmChannel;
+    uint8\\\_t pwmChannel;
 
-    uint32\_t pwmFreq;
+    uint32\\\_t pwmFreq;
 
-    uint8\_t pwmResBits;
+    uint8\\\_t pwmResBits;
 
 };
 
-\`\`\`
+\\\`\\\`\\\`
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
 enum class PinModeType {
 
     UNUSED,
 
-    DIGITAL\_IN,
+    DIGITAL\\\_IN,
 
-    DIGITAL\_IN\_PULLUP,
+    DIGITAL\\\_IN\\\_PULLUP,
 
-    DIGITAL\_IN\_PULLDOWN,
+    DIGITAL\\\_IN\\\_PULLDOWN,
 
-    DIGITAL\_OUT,
+    DIGITAL\\\_OUT,
 
-    ANALOG\_IN,
+    ANALOG\\\_IN,
 
-    ANALOG\_OUT,
+    ANALOG\\\_OUT,
 
-    PWM\_OUT,
+    PWM\\\_OUT,
 
-    PULSE\_COUNTER,
+    PULSE\\\_COUNTER,
 
-    NEOPIXEL\_OUT
+    NEOPIXEL\\\_OUT
 
 };
 
-\`\`\`
+\\\`\\\`\\\`
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 36. Config 所有権**
+**\*\*# 36. Config 所有権\*\***
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 System       → SystemConfig
 
@@ -1755,29 +1826,29 @@ RTE          → RteConfig（必要に応じて将来分離）
 
 Platform     → PlatformConfig
 
-\`\`\`
+\\\`\\\`\\\`
 
 原則：
 
-1\.  Config は原則 \`const\`
+1\\.  Config は原則 \\\`const\\\`
 
-2\.  コード本体から分離
+2\\.  コード本体から分離
 
-3\.  Config の所有者だけが直接参照
+3\\.  Config の所有者だけが直接参照
 
-4\.  他レイヤの Config を直接参照しない
+4\\.  他レイヤの Config を直接参照しない
 
-5\.  レイヤ間の情報交換は Interface を使用
+5\\.  レイヤ間の情報交換は Interface を使用
 
-6\.  Config を共有グローバルデータ置き場にしない
+6\\.  Config を共有グローバルデータ置き場にしない
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 37. LED制御**
+**\*\*# 37. LED制御\*\***
 
 System は Controller 接続状態を監視する。
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 connected
 
@@ -1791,15 +1862,15 @@ disconnected
 
 Red
 
-\`\`\`
+\\\`\\\`\\\`
 
 LED の物理制御は Platform が担当する。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 38. Shutdown**
+**\*\*# 38. Shutdown\*\***
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 System detects shutdown request
 
@@ -1819,11 +1890,11 @@ Platform::shutdown()
 
 SystemState = SHUTDOWN
 
-\`\`\`
+\\\`\\\`\\\`
 
 安全状態：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 M1 IN1 = 0
 
@@ -1833,17 +1904,17 @@ M2 IN1 = 0
 
 M2 IN2 = 0
 
-\`\`\`
+\\\`\\\`\\\`
 
 LED / DAC も安全状態へ移行する。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 39. Input Data Flow**
+**\*\*# 39. Input Data Flow\*\***
 
 Bluetooth：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 Bluetooth Controller
 
@@ -1857,6 +1928,10 @@ PlatformBluetooth
 
         ↓
 
+PlatformControllerInput
+
+        ↓
+
 PlatformControllerData
 
         ↓
@@ -1871,11 +1946,11 @@ DriveInput / ButtonState / StickValue
 
 Application
 
-\`\`\`
+\\\`\\\`\\\`
 
 HTTP/WebSocket：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 Browser / iPhone
 
@@ -1889,6 +1964,10 @@ PlatformHttp
 
         ↓
 
+PlatformControllerInput
+
+        ↓
+
 PlatformControllerData
 
         ↓
@@ -1903,21 +1982,21 @@ DriveInput / ButtonState / StickValue
 
 Application
 
-\`\`\`
+\\\`\\\`\\\`
 
 Application は通信方式を知らない。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 40. Output Data Flow**
+**\*\*# 40. Output Data Flow\*\***
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 Application
 
     ↓
 
-VehicleCommand + Left/Right Output
+Left/Right Motor Output
 
     ↓
 
@@ -1947,15 +2026,15 @@ DRV8835
 
 DC Motors
 
-\`\`\`
+\\\`\\\`\\\`
 
 Application → Platform の直接呼び出しは行わない。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 41. Runtime Data Flow**
+**\*\*# 41. Runtime Data Flow\*\***
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 100ms Cycle
 
@@ -1977,9 +2056,9 @@ Rte::updateOutput
 
 Platform::updateOutput
 
-\`\`\`
+\\\`\\\`\\\`
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 1000ms Cycle
 
@@ -1987,41 +2066,41 @@ System::led
 
         ↓
 
-PlatformHttp::update
+Debug 情報送信
 
-\`\`\`
+\\\`\\\`\\\`
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 42. Debug Console**
+**\*\*# 42. Debug Console\*\***
 
-**## 42.1 位置づけ**
+**\*\*## 42.1 位置づけ\*\***
 
 DebugLogger は Platform に属する。
 
 ただし機能としては「デバッグ専用」ではなく、
 
-\> Platform から外部へ情報を送信するための情報送信用機能
+\\> Platform から外部へ情報を送信するための情報送信用機能
 
 として扱う。
 
 Controller Input の受信機能に対する情報送信機能として構成する。
 
-**## 42.2 API**
+**\*\*## 42.2 API\*\***
 
 上位レイヤは単純な API を呼ぶ。
 
-\`\`\` cpp
+\\\`\\\`\\\` cpp
 
 Rte::sendInfo("[APP] Debug Console test");
 
-\`\`\`
+\\\`\\\`\\\`
 
 Application / System は WebSocket を直接扱わない。
 
-**## 42.3 送信経路**
+**\*\*## 42.3 送信経路\*\***
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 Application / System
 
@@ -2045,59 +2124,59 @@ WebSocket
 
 Browser Debug Console
 
-\`\`\`
+\\\`\\\`\\\`
 
-**## 42.4 Buffer**
+**\*\*## 42.4 Buffer\*\***
 
 M5側 Info Buffer は現在32件とする。
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 最大32件
 
-\`\`\`
+\\\`\\\`\\\`
 
 満杯の場合、それ以上の情報はバッファへ追加しない。
 
 送信済み情報はバッファから削除するため、同じ情報を次回周期に再送しない。
 
-同じ内容を \`sendInfo()\` が再度呼べば、新しい情報として送信対象になる。
+同じ内容を \\\`sendInfo()\\\` が再度呼べば、新しい情報として送信対象になる。
 
-**## 42.5 送信周期**
+**\*\*## 42.5 送信周期\*\***
 
-PlatformHttp は情報を蓄積し、1000ms 周期の \`Platform::updateInfo()\`
+PlatformHttp は情報を蓄積し、1000ms 周期の \\\`Platform::updateInfo()\\\`
 
 でまとめて送信する。
 
 走行用100ms周期とは分離する。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 43. Browser Debug Console**
+**\*\*# 43. Browser Debug Console\*\***
 
 Browser 側には Debug Console 表示領域を持つ。
 
-\`\`\` html
+\\\`\\\`\\\` html
 
-\<section class="debug-console">
+\\\<section class="debug-console">
 
-    \<h2>Debug Console\</h2>
+    \\\<h2>Debug Console\\\</h2>
 
-    \<div
+    \\\<div
 
         id="debugConsole"
 
         class="debug-console-log">
 
-    \</div>
+    \\\</div>
 
-\</section>
+\\\</section>
 
-\`\`\`
+\\\`\\\`\\\`
 
 JavaScript の WebSocket 受信処理から Console UI へ表示する。
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 WebSocket
 
@@ -2109,11 +2188,11 @@ JavaScript
 
 Debug Console DOM
 
-\`\`\`
+\\\`\\\`\\\`
 
 Browser 側は最新約50件のみ保持する。
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 新しいログ
 
@@ -2129,71 +2208,77 @@ Browser 側は最新約50件のみ保持する。
 
 古いログを削除
 
-\`\`\`
+\\\`\\\`\\\`
 
 長時間接続してもログが無制限に増えない。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 44. Debug Console の基本方針**
+**\*\*# 44. Debug Console の基本方針\*\***
 
-\-   上位レイヤは \`Rte::sendInfo()\` だけを呼ぶ
+\\-   上位レイヤは \\\`Rte::sendInfo()\\\` だけを呼ぶ
 
-\-   WebSocket の詳細を上位レイヤへ公開しない
+\\-   WebSocket の詳細を上位レイヤへ公開しない
 
-\-   PlatformHttp が情報を蓄積する
+\\-   PlatformHttp が情報を蓄積する
 
-\-   1000ms 周期でまとめて送信する
+\\-   1000ms 周期でまとめて送信する
 
-\-   送信済み情報はバッファから削除する
+\\-   送信済み情報はバッファから削除する
 
-\-   M5側は最大32件
+\\-   M5側は最大32件
 
-\-   Browser側は最新50件
+\\-   Browser側は最新50件
 
-\-   Heartbeat は通常ログへ表示しない
+\\-   Heartbeat は通常ログへ表示しない
 
-\-   Controller Input の受信ログと Debug 情報を分離する
+\\-   Controller Input の受信ログと Debug 情報を分離する
 
-\-   同一状態を無制限に周期出力しない
+\\-   同一状態を無制限に周期出力しない
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 45. メモリ使用方針**
+**\*\*# 45. メモリ使用方針\*\***
 
 ESP32：
 
-```text
+\`\`\`text
+
 RAM   : 320KB
+
 Flash : 4MB
-```
+
+\`\`\`
 
 Flash は OTA 用の APP0 / APP1、OTA Data、NVS、
+
 Web Controller 用の LittleFS に分割して使用する。
 
 RAM は Wi-Fi / Bluetooth / WebSocket / FreeRTOS / String
+
 等も使用するため、今後の機能追加では RAM 使用量を確認する。
 
 Debug Console の M5側 Info Buffer は現時点で32件のままとする。
 
 
-**# 46. 将来拡張**
 
-**## 46.1 Controller Pairing**
+**\*\*# 46. 将来拡張\*\***
+
+**\*\*## 46.1 Controller Pairing\*\***
 
 NVS 等への Controller 接続履歴保存を将来検討する。
 
-**## 46.2 Wi-Fi設定**
+**\*\*## 46.2 Wi-Fi設定\*\***
 
 将来的に Browser / Bluetooth 等から SSID / Password
 
 を設定できる構成を検討する。
 
-**## 46.3 AP Mode**
+**\*\*## 46.3 AP Mode\*\***
 
 PlatformWifi に AP モードを追加できる構造を維持する。
 
-**## 46.4 Camera / 大容量データ**
+**\*\*## 46.4 Camera / 大容量データ\*\***
 
 将来カメラ等の大容量データを扱う可能性がある。
 
@@ -2201,17 +2286,17 @@ PlatformWifi に AP モードを追加できる構造を維持する。
 
 通信とは別のデータ経路として設計する。
 
-**## 46.5 Current Sense / Encoder**
+**\*\*## 46.5 Current Sense / Encoder\*\***
 
 Current Sense と Encoder は準備段階。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 47. 現在実装済みの主な機能**
+**\*\*# 47. 現在実装済みの主な機能\*\***
 
   機能                                   状態
 
-  \-------------------------------------- --------------------
+  \\-------------------------------------- --------------------
 
   System lifecycle                       実装済み
 
@@ -2225,7 +2310,7 @@ Current Sense と Encoder は準備段階。
 
   HTTP / WebSocket Controller            実装済み
 
-  Bluetooth優先入力切替                  実装済み
+  Bluetooth優先 Controller Input 切替                  実装済み
 
   Controller connection detection        実装済み
 
@@ -2235,9 +2320,9 @@ Current Sense と Encoder は準備段階。
 
   D-Pad                                  実装済み
 
-  HTTP button state hold                 実装済み
+  HTTP button state / Pressed / Released / Hold 実装済み
 
-  HTTP D-Pad state hold                  実装済み
+  HTTP D-Pad / Pressed / Released / Hold 実装済み
 
   HTTP stick latest-value hold           実装済み
 
@@ -2269,7 +2354,7 @@ Current Sense と Encoder は準備段階。
 
   Shutdown safe output                   実装済み
 
-  RTE \`sendInfo()\`                       実装済み
+  RTE \\\`sendInfo()\\\`                       実装済み
 
   PlatformHttp Info Buffer               実装済み
 
@@ -2279,7 +2364,7 @@ Current Sense と Encoder は準備段階。
 
   Browser 最新50件保持                   実装済み
 
-  残り Controller ボタン                 保留
+  HTTP MISC / 追加 Controller ボタン             保留
 
   DRV8835 electrical BRAKE               未実装
 
@@ -2289,39 +2374,39 @@ Current Sense と Encoder は準備段階。
 
   Persistent controller pairing          TODO
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 48. 現在残っている主な実装課題**
+**\*\*# 48. 現在残っている主な実装課題\*\***
 
-1\.  \`calculateDriveOutput()\` の最小旋回半径・安全範囲を確定
+1\\.  \\\`calculateDriveOutput()\\\` の最小旋回半径・安全範囲を確定
 
-2\.  \`DriveOutput → Rte::setDriveCommand()\` の最終確認
+2\\.  \\\`DriveOutput → Rte::setDriveOutput()\\\` の最終確認
 
-3\.  Debug Console / Serial による演算確認
+3\\.  Debug Console / Serial による演算確認
 
-4\.  モーター未接続で PWM 出力確認
+4\\.  モーター未接続で PWM 出力確認
 
-5\.  低 Duty で実モーター接続
+5\\.  低 Duty で実モーター接続
 
-6\.  前進 / 後退確認
+6\\.  前進 / 後退確認
 
-7\.  直進 / 左右旋回確認
+7\\.  直進 / 左右旋回確認
 
-8\.  加速 / 減速 MAP 適合
+8\\.  加速 / 減速 MAP 適合
 
-9\.  ブレーキ適合
+9\\.  ブレーキ適合
 
-10\. Controller 切断時の安全動作確認
+10\\. Controller 切断時の安全動作確認
 
-11\. Shutdown 確認
+11\\. Shutdown 確認
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 49. レイヤ責務まとめ**
+**\*\*# 49. レイヤ責務まとめ\*\***
 
   項目                         System   Application   RTE   Platform
 
-  \-------------------------- -------- ------------- ----- ----------
+  \\-------------------------- -------- ------------- ----- ----------
 
   Startup                           ◎                     
 
@@ -2369,37 +2454,37 @@ Current Sense と Encoder は準備段階。
 
   ハードウェア安全停止                                             ◎
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 50. 現行アーキテクチャの中心原則**
+**\*\*# 50. 現行アーキテクチャの中心原則\*\***
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 System
 
-    \= システムを動かす
+    \\= システムを動かす
 
 Application
 
-    \= 車両としてどう動きたいかを決める
+    \\= 車両としてどう動きたいかを決める
 
 RTE
 
-    \= 車両の論理要求とハードウェア制御方式を変換する
+    \\= 車両の論理要求とハードウェア制御方式を変換する
 
 Platform
 
-    \= MCU・通信・物理I/Oを実際に扱う
+    \\= MCU・通信・物理I/Oを実際に扱う
 
 Config
 
-    \= 各レイヤ固有の適合値を保持する
+    \\= 各レイヤ固有の適合値を保持する
 
-\`\`\`
+\\\`\\\`\\\`
 
 Controller Input：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 Bluetooth ─→ PlatformBluetooth ──┐
 
@@ -2421,11 +2506,11 @@ Browser ─→ WebSocket ─→ PlatformHttp
 
                             Application
 
-\`\`\`
+\\\`\\\`\\\`
 
 Debug 情報：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 Application / System
 
@@ -2445,11 +2530,11 @@ WebSocket
 
 Browser Debug Console
 
-\`\`\`
+\\\`\\\`\\\`
 
 モーター：
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 Controller
 
@@ -2471,7 +2556,7 @@ Application
 
     ↓
 
-VehicleCommand + Left/Right Output
+Left/Right Motor Output
 
     ↓
 
@@ -2501,69 +2586,69 @@ DRV8835
 
 DC Motors
 
-\`\`\`
+\\\`\\\`\\\`
 
 この境界を維持することを、本プロジェクトのアーキテクチャ上の基本方針とする。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 51. 現在の実装優先順位**
+**\*\*# 51. 現在の実装優先順位\*\***
 
 Controller Input と Debug Console の基本機能は実装済み。
 
-\`\`\` text
+\\\`\\\`\\\` text
 
-1\. calculateDriveOutput() の安全範囲確定
-
-        ↓
-
-2\. DriveOutput → Rte::setDriveCommand() の最終確認
+1\\. calculateDriveOutput() の安全範囲確定
 
         ↓
 
-3\. Debug Console / Serial で一連の演算確認
+2\\. DriveOutput → Rte::setDriveOutput() の最終確認
 
         ↓
 
-4\. モーター未接続でPWM出力確認
+3\\. Debug Console / Serial で一連の演算確認
 
         ↓
 
-5\. 低Dutyで実モーター接続
+4\\. モーター未接続でPWM出力確認
 
         ↓
 
-6\. 前進 / 後退確認
+5\\. 低Dutyで実モーター接続
 
         ↓
 
-7\. 直進 / 左右旋回確認
+6\\. 前進 / 後退確認
 
         ↓
 
-8\. 加速 / 減速 MAP 適合
+7\\. 直進 / 左右旋回確認
 
         ↓
 
-9\. ブレーキ適合
+8\\. 加速 / 減速 MAP 適合
 
         ↓
 
-10\. 安全停止・Controller切断時動作確認
+9\\. ブレーキ適合
 
-\`\`\`
+        ↓
+
+10\\. 安全停止・Controller切断時動作確認
+
+\\\`\\\`\\\`
 
 残りの Controller ボタンは現時点では実装しない。
 
-\------------------------------------------------------------------------
+\\------------------------------------------------------------------------
 
-**# 52. 最終まとめ**
+**\*\*# 52. 最終まとめ\*\***
 
 本システムは System / Application / RTE / Platform
 
 の4レイヤを明確に分離する。
 
-\`\`\` text
+\\\`\\\`\\\` text
 
 System
 
@@ -2595,27 +2680,27 @@ MCU / GPIO / PWM / ADC / DAC /
 
 Bluetooth / Wi-Fi / HTTP / WebSocket
 
-\`\`\`
+\\\`\\\`\\\`
 
 重要なのは、
 
-\-   Application と Platform を直接接続しない
+\\-   Application と Platform を直接接続しない
 
-\-   Controller の通信方式を Platform 内で吸収する
+\\-   Controller の通信方式を Platform 内で吸収する
 
-\-   RTE が入力ソースを選択する
+\\-   RTE が入力ソースを選択する
 
-\-   RTE が Application と Platform の IF を接続する
+\\-   RTE が Application と Platform の IF を接続する
 
-\-   Debug 情報も RTE API を経由する
+\\-   Debug 情報も RTE API を経由する
 
-\-   PlatformHttp が WebSocket の送受信を担当する
+\\-   PlatformHttp が WebSocket の送受信を担当する
 
-\-   100ms の走行処理と1000msの情報送信を分離する
+\\-   100ms の走行処理と1000msの情報送信を分離する
 
-\-   M5側 Debug Buffer は32件、Browser側は最新50件とする
+\\-   M5側 Debug Buffer は32件、Browser側は最新50件とする
 
-\-   車両固有の適合値を Config に分離する
+\\-   車両固有の適合値を Config に分離する
 
 ことである。
 
@@ -2623,4 +2708,84 @@ Bluetooth / Wi-Fi / HTTP / WebSocket
 
 の受信機能と対になる情報送信機能として完成しており、上位レイヤからは
 
-\`Rte::sendInfo()\` だけで利用できる。
+\\\`Rte::sendInfo()\\\` だけで利用できる。
+
+---
+
+# 53. 2026-09-03 Controller Input Architecture Update
+
+今回の Controller Input 構成変更を反映する。
+
+## 53.1 入力統一
+
+Bluetooth と HTTP/WebSocket は、Platform 内でそれぞれの通信方式を処理した後、
+`PlatformControllerInput` に集約する。
+
+```text
+Bluetooth
+    ↓
+PlatformBluetooth
+    ↓
+PlatformControllerInput ──┐
+                           ├→ PlatformControllerData → RTE
+HTTP/WebSocket             │
+    ↓                      │
+PlatformHttp ──────────────┘
+```
+
+RTE は Bluetooth / HTTP の違いを意識せず、`PlatformControllerData` のみを扱う。
+
+## 53.2 Button / D-Pad Event Model
+
+Bluetooth を基準とし、HTTP も同じ前回値との差分方式へ統一した。
+
+```text
+current state
+    ↓
+previous state と比較
+    ↓
+Pressed / Released
+```
+
+- `buttons` / `dpad`：現在状態
+- `buttonsPressed` / `buttonsReleased`：イベント状態
+- `dpadPressed` / `dpadReleased`：イベント状態
+- Pressed / Released は1周期だけ有効
+- HOLD は現在状態が継続している間に成立
+
+これにより Bluetooth と HTTP で RTE への入力データモデルを統一する。
+
+## 53.3 HTTP Controller Input
+
+現在の HTTP Controller 入力：
+
+- A / B / X / Y
+- D-Pad UP / DOWN / LEFT / RIGHT
+- Left Stick
+- Right Stick
+
+HTTP では HOME / MINUS / PLUS / PICT、および L1 / R1 / L2 / R2 / L3 / R3 は未実装。
+
+## 53.4 入力周期
+
+HTTP / WebSocket の受信処理は `Platform::updateInput()` 内で処理し、
+100ms の走行入力周期に同期して `PlatformControllerInput::updateControllerInput()`
+まで実行する。
+
+1000ms 周期は Controller 入力処理ではなく、Debug 情報送信などの低頻度処理に使用する。
+
+## 53.5 RTE Output IF
+
+Application から RTE への走行出力 IF は、
+
+```cpp
+void setDriveOutput(
+    int8_t motorRightOutput,
+    int8_t motorLeftOutput);
+```
+
+とする。
+
+旧 `VehicleCommand` による STOP / FORWARD / REVERSE / BRAKE の状態指令方式は
+現行アーキテクチャでは採用せず、Application が左右モーター出力値を決定し、
+RTE が DRV8835 の IN/IN 制御へ変換する。

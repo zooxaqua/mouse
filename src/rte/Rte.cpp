@@ -5,87 +5,19 @@
 #include "../platform/Platform.h"
 #include "../platform/PlatformConfig.h"
 #include "../platform/PlatformBluetooth.h"
+#include "../platform/PlatformControllerInput.h"
 #include "../platform/PlatformHttp.h"
 #include <Arduino.h>
 
 namespace {
 
-    //■システム用
+    // ■システム用
     // シャットダウン要求フラグ
     bool s_shutdownRequested = false;
 
-    //■INPUT
-    // APPのボタン名とPlatformのボタン値を対応付ける
-    struct ButtonMap {
-        AppButton appButton;
-        uint32_t platformValue;
-    };
-    struct MiscButtonMap {
-        AppMiscButton appButton;
-        uint32_t platformValue;
-    };
-    struct DpadMap {
-        AppDpad appDpad;
-        uint8_t platformValue;
-    };
-    
-    // ボタン変換マップ
-    constexpr ButtonMap g_buttonMap[] = {
-        { AppButton::A,        0x0002 },
-        { AppButton::B,        0x0001 },
-        { AppButton::X,        0x0008 },
-        { AppButton::Y,        0x0004 },
-        { AppButton::R1,       0x0020 },
-        { AppButton::L1,       0x0010 },
-        { AppButton::R2,       0x0080 },
-        { AppButton::L2,       0x0040 },
-        { AppButton::R3,       0x0200 },
-        { AppButton::L3,       0x0100 },
-    };
-
-    constexpr MiscButtonMap g_miscButtonMap[] = {
-        { AppMiscButton::HOME,   0x01 },
-        { AppMiscButton::MINUS,  0x02 },
-        { AppMiscButton::PLUS,   0x04 },
-        { AppMiscButton::PICT,   0x08 }
-    };
-
-    constexpr DpadMap g_dpadMap[] = {
-        { AppDpad::UP,    0x01 },
-        { AppDpad::DOWN,  0x02 },
-        { AppDpad::LEFT,  0x08 },
-        { AppDpad::RIGHT, 0x04 }
-    };
-
-    PlatformControllerInput s_controllerInput = {};
-
-    // ---------------------------------------------------------
-    // AppButtonから対応するPlatformのマスク値を取得
-    // ---------------------------------------------------------
-    uint32_t getPlatformButtonValue(AppButton button)
-    {
-        return g_buttonMap[static_cast<uint8_t>(button)].platformValue;
-    }
-
-    // ---------------------------------------------------------
-    // AppMiscButtonから対応するPlatformのマスク値を取得
-    // ---------------------------------------------------------
-    uint32_t getPlatformMiscButtonValue(AppMiscButton button)
-    {
-        return g_miscButtonMap[static_cast<uint8_t>(button)].platformValue;
-    }
-    
-    // ---------------------------------------------------------
-    // AppDpadから対応するPlatformのマスク値を取得
-    // ---------------------------------------------------------
-    uint8_t getPlatformDpadValue(AppDpad dpad)
-    {
-        return g_dpadMap[static_cast<uint8_t>(dpad)].platformValue;
-    }
-
     DriveInput s_driveInput = {};
 
-    //■OUTPUT
+    // ■OUTPUT
     struct DriveCommand {
         int8_t motorRightOutput;
         int8_t motorLeftOutput;
@@ -121,7 +53,6 @@ namespace {
             Platform::setPwmDuty(PwmOutput::MOTOR2_IN2, static_cast<uint8_t>(-motorLeftOutput));
         }
     }
-
 }
 
 namespace Rte {
@@ -151,28 +82,14 @@ namespace Rte {
     // ---------------------------------------------------------
     void updateInput()
     {
-        // Controller Input
-        if (PlatformBluetooth::isControllerConnected()) {
-
-            // Bluetoothを優先
-            s_controllerInput = PlatformBluetooth::getControllerInput();
-
-        }
-        else if (PlatformHttp::isControllerConnected()) {
-
-            // Bluetooth未接続ならHTTP
-            s_controllerInput = PlatformHttp::getControllerInput();
-
+        if (PlatformControllerInput::isControllerConnected()) {
+            updateDriveInput();
         }
         else {
-
-            // どちらも未接続なら安全側へ
-            s_controllerInput = {};
+            s_driveInput = {};
         }
 
         debugButtonState();
-
-        updateDriveInput();
     }
 
     // ---------------------------------------------------------
@@ -199,84 +116,72 @@ namespace Rte {
     bool isControllerConnected()
     {
         
-        return PlatformBluetooth::isControllerConnected() || PlatformHttp::isControllerConnected();
+        return PlatformControllerInput::isControllerConnected() || PlatformHttp::isControllerConnected();
     }
 
     // ---------------------------------------------------------
     // ボタン状態を取得
     // ---------------------------------------------------------
-    ButtonState getButtonState(AppButton button)
+    ButtonState getButtonState(uint32_t buttonMask)
     {
-        uint32_t mask = getPlatformButtonValue(button);
+        PlatformControllerData input = PlatformControllerInput::getControllerInput();
 
-        // 今回押された
-        if ((s_controllerInput.buttonsPressed & mask) != 0) {
+        if (input.buttonsPressed & buttonMask) {
             return ButtonState::PRESSED;
         }
 
-        // 今回離された
-        if ((s_controllerInput.buttonsReleased & mask) != 0) {
+        if (input.buttonsReleased & buttonMask) {
             return ButtonState::RELEASED;
         }
 
-        // 押されている
-        if ((s_controllerInput.buttons & mask) != 0) {
+        if (input.buttons & buttonMask) {
             return ButtonState::HOLD;
         }
 
-        // 押されていない
         return ButtonState::NONE;
     }
 
     // ---------------------------------------------------------
     // Miscボタン状態を取得
     // ---------------------------------------------------------
-    ButtonState getMiscButtonState(AppMiscButton button)
+    ButtonState getMiscButtonState(uint8_t buttonMask)
     {
-        uint32_t mask = getPlatformMiscButtonValue(button);
+        PlatformControllerData input = PlatformControllerInput::getControllerInput();
 
-        // 今回押された
-        if ((s_controllerInput.miscButtonsPressed & mask) != 0) {
+        if (input.miscButtonsPressed & buttonMask) {
             return ButtonState::PRESSED;
         }
 
-        // 今回離された
-        if ((s_controllerInput.miscButtonsReleased & mask) != 0) {
+        if (input.miscButtonsReleased & buttonMask) {
             return ButtonState::RELEASED;
         }
 
-        // 押されている
-        if ((s_controllerInput.miscButtons & mask) != 0) {
+        if (input.miscButtons & buttonMask) {
             return ButtonState::HOLD;
         }
 
-        // 押されていない
         return ButtonState::NONE;
     }
 
     // ---------------------------------------------------------
     // D-Pad状態を取得
     // ---------------------------------------------------------
-    ButtonState getDpadState(AppDpad dpad)
+    ButtonState getDpadState(uint8_t dpadMask)
     {
-        uint8_t mask = getPlatformDpadValue(dpad);
+        PlatformControllerData input = PlatformControllerInput::getControllerInput();
 
-        // 今回押された
-        if ((s_controllerInput.dpadPressed & mask) != 0) {
+        if (input.dpadPressed & dpadMask) {
             return ButtonState::PRESSED;
         }
 
-        // 今回離された
-        if ((s_controllerInput.dpadReleased & mask) != 0) {
+        if (input.dpadReleased & dpadMask) {
             return ButtonState::RELEASED;
         }
 
-        // 押されている
-        if ((s_controllerInput.dpad & mask) != 0) {
+        if (input.dpad & dpadMask) {
             return ButtonState::HOLD;
         }
 
-        // 押されていない
         return ButtonState::NONE;
     }
 
@@ -285,17 +190,19 @@ namespace Rte {
     // ---------------------------------------------------------
     StickValue getStickValue(AppStick stick)
     {
+        PlatformControllerData input = PlatformControllerInput::getControllerInput();
+
         if (stick == AppStick::LEFT) {
             return {
-                s_controllerInput.leftStickX,
-                s_controllerInput.leftStickY
+                input.leftStickX,
+                input.leftStickY
             };
         }
 
         if (stick == AppStick::RIGHT) {
             return {
-                s_controllerInput.rightStickX,
-                s_controllerInput.rightStickY
+                input.rightStickX,
+                input.rightStickY
             };
         }
 
@@ -373,14 +280,14 @@ namespace Rte {
         s_driveInput.steeringRatio = static_cast<int16_t>(stickL.x);
 
         // 出力：Aボタン押下中は出力100
-        if (getButtonState(AppButton::A) == ButtonState::HOLD ||
-            getButtonState(AppButton::A) == ButtonState::PRESSED) {
+        if (getButtonState(g_switchButtonMap.A) == ButtonState::HOLD ||
+            getButtonState(g_switchButtonMap.A) == ButtonState::PRESSED) {
             s_driveInput.output = 100;
         }
 
         // 出力：Bボタン押下中はブレーキ
-        if (getButtonState(AppButton::B) == ButtonState::HOLD ||
-            getButtonState(AppButton::B) == ButtonState::PRESSED) {
+        if (getButtonState(g_switchButtonMap.B) == ButtonState::HOLD ||
+            getButtonState(g_switchButtonMap.B) == ButtonState::PRESSED) {
             s_driveInput.brake = true;
         }
         // デバッグ出力
@@ -423,96 +330,85 @@ namespace Rte {
         }
 
         // 通常ボタン
-        if (getButtonState(AppButton::A) != ButtonState::NONE) {
-            Serial.printf("[BUTTON] A: 0x%02X\n",
-                        static_cast<uint8_t>(getButtonState(AppButton::A)));
-        }
+    if (getButtonState(g_switchButtonMap.A) != ButtonState::NONE) {
+        Serial.printf("[BUTTON] A: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.A)));
+    }
 
-        if (getButtonState(AppButton::B) != ButtonState::NONE) {
-            Serial.printf("[BUTTON] B: 0x%02X\n",
-                        static_cast<uint8_t>(getButtonState(AppButton::B)));
-        }
+    if (getButtonState(g_switchButtonMap.B) != ButtonState::NONE) {
+        Serial.printf("[BUTTON] B: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.B)));
+    }
 
-        if (getButtonState(AppButton::X) != ButtonState::NONE) {
-            Serial.printf("[BUTTON] X: 0x%02X\n",
-                        static_cast<uint8_t>(getButtonState(AppButton::X)));
-        }
+    if (getButtonState(g_switchButtonMap.X) != ButtonState::NONE) {
+        Serial.printf("[BUTTON] X: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.X)));
+    }
 
-        if (getButtonState(AppButton::Y) != ButtonState::NONE) {
-            Serial.printf("[BUTTON] Y: 0x%02X\n",
-                        static_cast<uint8_t>(getButtonState(AppButton::Y)));
-        }
+    if (getButtonState(g_switchButtonMap.Y) != ButtonState::NONE) {
+        Serial.printf("[BUTTON] Y: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.Y)));
+    }
 
-        if (getButtonState(AppButton::R1) != ButtonState::NONE) {
-            Serial.printf("[BUTTON] R1: 0x%02X\n",
-                        static_cast<uint8_t>(getButtonState(AppButton::R1)));
-        }
+    if (getButtonState(g_switchButtonMap.R1) != ButtonState::NONE) {
+        Serial.printf("[BUTTON] R1: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.R1)));
+    }
 
-        if (getButtonState(AppButton::L1) != ButtonState::NONE) {
-            Serial.printf("[BUTTON] L1: 0x%02X\n",
-                        static_cast<uint8_t>(getButtonState(AppButton::L1)));
-        }
+    if (getButtonState(g_switchButtonMap.L1) != ButtonState::NONE) {
+        Serial.printf("[BUTTON] L1: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.L1)));
+    }
 
-        if (getButtonState(AppButton::R2) != ButtonState::NONE) {
-            Serial.printf("[BUTTON] R2: 0x%02X\n",
-                        static_cast<uint8_t>(getButtonState(AppButton::R2)));
-        }
+    if (getButtonState(g_switchButtonMap.R2) != ButtonState::NONE) {
+        Serial.printf("[BUTTON] R2: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.R2)));
+    }
 
-        if (getButtonState(AppButton::L2) != ButtonState::NONE) {
-            Serial.printf("[BUTTON] L2: 0x%02X\n",
-                        static_cast<uint8_t>(getButtonState(AppButton::L2)));
-        }
+    if (getButtonState(g_switchButtonMap.L2) != ButtonState::NONE) {
+        Serial.printf("[BUTTON] L2: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.L2)));
+    }
 
-        if (getButtonState(AppButton::R3) != ButtonState::NONE) {
-            Serial.printf("[BUTTON] R3: 0x%02X\n",
-                        static_cast<uint8_t>(getButtonState(AppButton::R3)));
-        }
+    if (getButtonState(g_switchButtonMap.R3) != ButtonState::NONE) {
+        Serial.printf("[BUTTON] R3: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.R3)));
+    }
 
-        if (getButtonState(AppButton::L3) != ButtonState::NONE) {
-            Serial.printf("[BUTTON] L3: 0x%02X\n",
-                        static_cast<uint8_t>(getButtonState(AppButton::L3)));
-        }
-
+    if (getButtonState(g_switchButtonMap.L3) != ButtonState::NONE) {
+        Serial.printf("[BUTTON] L3: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.L3)));
+    }
         // MISCボタン
-        if (getMiscButtonState(AppMiscButton::HOME) != ButtonState::NONE) {
+        if (getMiscButtonState(g_switchMiscButtonMap.HOME) != ButtonState::NONE) {
             Serial.printf("[MISC] HOME: 0x%02X\n",
-                        static_cast<uint8_t>(getMiscButtonState(AppMiscButton::HOME)));
+                        static_cast<uint8_t>(getMiscButtonState(g_switchMiscButtonMap.HOME)));
         }
 
-        if (getMiscButtonState(AppMiscButton::MINUS) != ButtonState::NONE) {
+        if (getMiscButtonState(g_switchMiscButtonMap.MINUS) != ButtonState::NONE) {
             Serial.printf("[MISC] MINUS: 0x%02X\n",
-                        static_cast<uint8_t>(getMiscButtonState(AppMiscButton::MINUS)));
+                        static_cast<uint8_t>(getMiscButtonState(g_switchMiscButtonMap.MINUS)));
         }
 
-        if (getMiscButtonState(AppMiscButton::PLUS) != ButtonState::NONE) {
+        if (getMiscButtonState(g_switchMiscButtonMap.PLUS) != ButtonState::NONE) {
             Serial.printf("[MISC] PLUS: 0x%02X\n",
-                        static_cast<uint8_t>(getMiscButtonState(AppMiscButton::PLUS)));
+                        static_cast<uint8_t>(getMiscButtonState(g_switchMiscButtonMap.PLUS)));
         }
 
-        if (getMiscButtonState(AppMiscButton::PICT) != ButtonState::NONE) {
+        if (getMiscButtonState(g_switchMiscButtonMap.PICT) != ButtonState::NONE) {
             Serial.printf("[MISC] PICT: 0x%02X\n",
-                        static_cast<uint8_t>(getMiscButtonState(AppMiscButton::PICT)));
+                        static_cast<uint8_t>(getMiscButtonState(g_switchMiscButtonMap.PICT)));
         }
 
         // D-Pad
-        if (getDpadState(AppDpad::UP) != ButtonState::NONE) {
+        if (getDpadState(g_switchDpadMap.UP) != ButtonState::NONE) {
             Serial.printf("[DPAD] UP: 0x%02X\n",
-                        static_cast<uint8_t>(getDpadState(AppDpad::UP)));
+                        static_cast<uint8_t>(getDpadState(g_switchDpadMap.UP)));
         }
 
-        if (getDpadState(AppDpad::DOWN) != ButtonState::NONE) {
+        if (getDpadState(g_switchDpadMap.DOWN) != ButtonState::NONE) {
             Serial.printf("[DPAD] DOWN: 0x%02X\n",
-                        static_cast<uint8_t>(getDpadState(AppDpad::DOWN)));
+                        static_cast<uint8_t>(getDpadState(g_switchDpadMap.DOWN)));
         }
 
-        if (getDpadState(AppDpad::LEFT) != ButtonState::NONE) {
+        if (getDpadState(g_switchDpadMap.LEFT) != ButtonState::NONE) {
             Serial.printf("[DPAD] LEFT: 0x%02X\n",
-                        static_cast<uint8_t>(getDpadState(AppDpad::LEFT)));
+                        static_cast<uint8_t>(getDpadState(g_switchDpadMap.LEFT)));
         }
 
-        if (getDpadState(AppDpad::RIGHT) != ButtonState::NONE) {
+        if (getDpadState(g_switchDpadMap.RIGHT) != ButtonState::NONE) {
             Serial.printf("[DPAD] RIGHT: 0x%02X\n",
-                        static_cast<uint8_t>(getDpadState(AppDpad::RIGHT)));
+                        static_cast<uint8_t>(getDpadState(g_switchDpadMap.RIGHT)));
         }
     }
 

@@ -1,3 +1,6 @@
+// PlatformWifi.h
+// Wi-Fi接続処理
+
 #ifndef PLATFORMWIFI_H
 #define PLATFORMWIFI_H
 

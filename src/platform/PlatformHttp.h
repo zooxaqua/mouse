@@ -1,3 +1,6 @@
+// PlatformHttp.h
+// HTTP通信を使用したコントローラ入力処理
+
 #ifndef PLATFORMHTTP_H
 #define PLATFORMHTTP_H
 
@@ -11,7 +14,6 @@ namespace PlatformHttp {
     
     bool isControllerConnected();                   // Webコントローラ接続状態を取得
     
-    PlatformControllerInput getControllerInput();   // Webコントローラ入力を取得
     void sendInfo(const char* message);             // デバッグ情報を送信バッファへ追加
     
 }

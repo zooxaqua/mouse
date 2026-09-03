@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 
-// ボタン
+// APP向けボタン定義（これは抽象化したボタン配置）
 enum class AppButton : uint8_t {
     A,
     B,

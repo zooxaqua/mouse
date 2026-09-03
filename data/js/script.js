@@ -3,7 +3,7 @@
 // =========================================================
 
 const HEARTBEAT_INTERVAL_MS = 200;
-const HEARTBEAT_MAX_MISSES = 5;
+const HEARTBEAT_MAX_MISSES = 10;
 
 let heartbeatStarted = false;
 let heartbeatMissCount = 0;
@@ -242,7 +242,7 @@ setInterval(
                         //タイムアウト処理
                         if (heartbeatMissCount >= HEARTBEAT_MAX_MISSES) {
 
-                            infoLogs.push("[WebSocket] Disconnected");
+                            infoLogs.push("[WebSocket] Edge Side Disconnected");
                             updateDebugConsole();
                             webSocket.close();
                             return;

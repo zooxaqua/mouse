@@ -1,3 +1,6 @@
+// PlatformWifi.cpp
+// Wi-Fi接続処理
+
 #include "PlatformWifi.h"
 #include "../../secrets/secrets.h"
 

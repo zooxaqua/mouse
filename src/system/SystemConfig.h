@@ -8,6 +8,7 @@
 #include <stddef.h>
 
 // Systemは例外的に全レイヤのヘッダを参照
+#include "System.h"
 #include "../platform/Platform.h"
 #include "../rte/Rte.h"
 #include "../application/App.h"

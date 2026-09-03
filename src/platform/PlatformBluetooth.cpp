@@ -1,44 +1,14 @@
+// PlatformBluetooth.cpp
+// Bluepad32を使用したBluetoothコントローラ入力処理
+
 #include <Arduino.h>
 #include <bluepad32.h>
 
 #include "PlatformBluetooth.h"
 
 namespace {
-
-    PlatformControllerInput s_controllerInput = {};
-
-    // 前回の入力状態
-    uint32_t s_previousButtons = 0;
-    uint8_t s_previousDpad = 0;
-    uint8_t s_previousMiscButtons = 0;
-
     // 接続中のコントローラ
     ControllerPtr s_controller = nullptr;
-    
-    // ---------------------------------------------------------
-    // スティック入力値を-100～+100へ正規化
-    // ---------------------------------------------------------
-    // Bluepad32から取得した入力値を、アプリケーションで使用する
-    // -100～+100の範囲へ変換する。
-    // -5～+5はデッドゾーンとして0にする。
-    // ---------------------------------------------------------
-    int8_t normalizeStickValue(int32_t value)
-    {
-        int32_t normalized = (value * 100) / 512;
-
-        if (normalized > 100) {
-            normalized = 100;
-        }
-        else if (normalized < -100) {
-            normalized = -100;
-        }
-
-        if (normalized >= -5 && normalized <= 5) {
-            normalized = 0;
-        }
-
-        return static_cast<int8_t>(normalized);
-    }
 
     // ---------------------------------------------------------
     // コントローラ接続時処理
@@ -56,6 +26,12 @@ namespace {
             Serial.printf("[BT] Is Gamepad: %d\n", ctl->isGamepad());
             Serial.printf("[BT] Is Mouse: %d\n", ctl->isMouse());
             Serial.printf("[BT] Is Keyboard: %d\n", ctl->isKeyboard());
+
+            // 現在はSwitchコントローラとしてMAPを設定（仮）
+            PlatformControllerInput::setControllerType(PlatformControllerType::SWITCH);
+
+            // コントローラ接続状態を通知
+            PlatformControllerInput::setControllerConnected(true);
         }
     }
 
@@ -70,6 +46,9 @@ namespace {
             Serial.println("[BT] CALLBACK: Controller disconnected");
 
             s_controller = nullptr;
+
+            // コントローラ接続状態を通知
+            PlatformControllerInput::setControllerConnected(false);
         }
     }
     // ---------------------------------------------------------
@@ -78,55 +57,23 @@ namespace {
     void updateControllerInput()
     {
         // コントローラ未接続
-        if (s_controller == nullptr ||
-            !s_controller->isConnected()) {
+        if (s_controller == nullptr || !s_controller->isConnected()) {
 
-            // 未接続時は入力をクリア
-            s_controllerInput = {};
-            s_previousButtons = 0;
-            s_previousDpad = 0;
-            s_previousMiscButtons = 0;
+            s_controller = nullptr;
 
             return;
         }
 
-        // スティック入力
-        {
-            s_controllerInput.leftStickX = normalizeStickValue(s_controller->axisX());
-            s_controllerInput.leftStickY = normalizeStickValue(s_controller->axisY());
-            s_controllerInput.rightStickX = normalizeStickValue(s_controller->axisRX());
-            s_controllerInput.rightStickY = normalizeStickValue(s_controller->axisRY());
-        }
-
-        // 通常ボタン入力
-        {
-            uint32_t currentButtons = s_controller->buttons();
-
-            s_controllerInput.buttons = currentButtons;                              // 現在押されている
-            s_controllerInput.buttonsPressed = currentButtons & ~s_previousButtons;  // 今回押された
-            s_controllerInput.buttonsReleased = s_previousButtons & ~currentButtons; // 今回離された
-            s_previousButtons = currentButtons;                                      // 次回比較用
-        }
-
-        // D-Pad入力
-        {
-            uint8_t currentDpad = s_controller->dpad();
-
-            s_controllerInput.dpad = currentDpad;                           // 現在押されている
-            s_controllerInput.dpadPressed = currentDpad & ~s_previousDpad;  // 今回押された
-            s_controllerInput.dpadReleased = s_previousDpad & ~currentDpad; // 今回離された
-            s_previousDpad = currentDpad;                                   // 次回比較用
-        }
-
-        // Miscボタン入力
-        {
-            uint8_t currentMiscButtons = s_controller->miscButtons();
-
-            s_controllerInput.miscButtons = currentMiscButtons;                                  // 現在押されている
-            s_controllerInput.miscButtonsPressed = currentMiscButtons & ~s_previousMiscButtons;  // 今回押された
-            s_controllerInput.miscButtonsReleased = s_previousMiscButtons & ~currentMiscButtons; // 今回離された
-            s_previousMiscButtons = currentMiscButtons;                                          // 次回比較用
-        }
+        //引数はs_controllerだけでよくない？
+        PlatformControllerInput::updateBlueToothControllerInput(
+            s_controller->axisX(),
+            s_controller->axisY(),
+            s_controller->axisRX(),
+            s_controller->axisRY(),
+            s_controller->buttons(),
+            s_controller->dpad(),
+            s_controller->miscButtons()
+        );
     }
 
 }
@@ -160,13 +107,5 @@ namespace PlatformBluetooth {
     bool isControllerConnected()
     {
         return s_controller != nullptr && s_controller->isConnected();
-    }
-
-    // ---------------------------------------------------------
-    // コントローラ入力を取得
-    // ---------------------------------------------------------
-    PlatformControllerInput getControllerInput()
-    {
-        return s_controllerInput;
     }
 }

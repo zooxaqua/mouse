@@ -1,4 +1,8 @@
+// PlatformHttp.cpp
+// HTTP通信を使用したコントローラ入力処理
+
 #include "PlatformHttp.h"
+#include "PlatformControllerInput.h"
 #include <WebServer.h>
 #include <WebSocketsServer.h>
 #include <LittleFS.h>
@@ -7,7 +11,6 @@ namespace {
 
     WebServer s_server(80);
     WebSocketsServer s_webSocket(81);
-    PlatformControllerInput s_controllerInput = {};
 
     // ---------------------------------------------------------
     // Httpルートページを送信
@@ -49,7 +52,7 @@ namespace {
     // WebSocket受信データをコントローラ入力へ変換
     // ---------------------------------------------------------
     // Webページから受信したボタン・D-Pad・スティック入力を
-    // PlatformControllerInputへ変換する。
+    // PlatformControllerData
     // ---------------------------------------------------------
     void processWebSocketInput( uint8_t clientNum, uint8_t* payload, size_t length)
     {
@@ -67,15 +70,13 @@ namespace {
         // A
         // ---------------------------------------------------------
         if (message == "button:A:pressed") {
-            s_controllerInput.buttons |= PlatformControllerButton::A;
-            s_controllerInput.buttonsPressed |= PlatformControllerButton::A;
+            PlatformControllerInput::updateHttpButtonA(true);
 
             return;
         }
 
         if (message == "button:A:released") {
-            s_controllerInput.buttons &= ~PlatformControllerButton::A;
-            s_controllerInput.buttonsReleased |= PlatformControllerButton::A;
+            PlatformControllerInput::updateHttpButtonA(false);
 
             return;
         }
@@ -84,17 +85,13 @@ namespace {
         // B
         // ---------------------------------------------------------
         if (message == "button:B:pressed") {
-
-            s_controllerInput.buttons |= PlatformControllerButton::B;
-            s_controllerInput.buttonsPressed |= PlatformControllerButton::B;
+            PlatformControllerInput::updateHttpButtonB(true);
 
             return;
         }
 
         if (message == "button:B:released") {
-
-            s_controllerInput.buttons &= ~PlatformControllerButton::B;
-            s_controllerInput.buttonsReleased |= PlatformControllerButton::B;
+            PlatformControllerInput::updateHttpButtonB(false);
 
             return;
         }
@@ -103,17 +100,13 @@ namespace {
         // X
         // ---------------------------------------------------------
         if (message == "button:X:pressed") {
-
-            s_controllerInput.buttons |= PlatformControllerButton::X;
-            s_controllerInput.buttonsPressed |= PlatformControllerButton::X;
+            PlatformControllerInput::updateHttpButtonX(true);
 
             return;
         }
 
         if (message == "button:X:released") {
-
-            s_controllerInput.buttons &= ~PlatformControllerButton::X;
-            s_controllerInput.buttonsReleased |= PlatformControllerButton::X;
+            PlatformControllerInput::updateHttpButtonX(false);
 
             return;
         }
@@ -122,17 +115,13 @@ namespace {
         // Y
         // ---------------------------------------------------------
         if (message == "button:Y:pressed") {
-
-            s_controllerInput.buttons |= PlatformControllerButton::Y;
-            s_controllerInput.buttonsPressed |= PlatformControllerButton::Y;
+            PlatformControllerInput::updateHttpButtonY(true);
 
             return;
         }
 
         if (message == "button:Y:released") {
-
-            s_controllerInput.buttons &= ~PlatformControllerButton::Y;
-            s_controllerInput.buttonsReleased |= PlatformControllerButton::Y;
+            PlatformControllerInput::updateHttpButtonY(false);
 
             return;
         }
@@ -140,17 +129,13 @@ namespace {
         // D-Pad UP
         // ---------------------------------------------------------
         if (message == "button:UP:pressed") {
-
-            s_controllerInput.dpad |= PlatformControllerDpad::UP;
-            s_controllerInput.dpadPressed |= PlatformControllerDpad::UP;
+            PlatformControllerInput::updateHttpDpadUp(true);
 
             return;
         }
 
         if (message == "button:UP:released") {
-
-            s_controllerInput.dpad &= ~PlatformControllerDpad::UP;
-            s_controllerInput.dpadReleased |= PlatformControllerDpad::UP;
+            PlatformControllerInput::updateHttpDpadUp(false);
 
             return;
         }
@@ -159,17 +144,13 @@ namespace {
         // D-Pad DOWN
         // ---------------------------------------------------------
         if (message == "button:DOWN:pressed") {
-
-            s_controllerInput.dpad |= PlatformControllerDpad::DOWN;
-            s_controllerInput.dpadPressed |= PlatformControllerDpad::DOWN;
+            PlatformControllerInput::updateHttpDpadDown(true);
 
             return;
         }
 
         if (message == "button:DOWN:released") {
-
-            s_controllerInput.dpad &= ~PlatformControllerDpad::DOWN;
-            s_controllerInput.dpadReleased |= PlatformControllerDpad::DOWN;
+            PlatformControllerInput::updateHttpDpadDown(false);
 
             return;
         }
@@ -177,19 +158,14 @@ namespace {
         // ---------------------------------------------------------
         // D-Pad LEFT
         // ---------------------------------------------------------
-
         if (message == "button:LEFT:pressed") {
-
-            s_controllerInput.dpad |= PlatformControllerDpad::LEFT;
-            s_controllerInput.dpadPressed |= PlatformControllerDpad::LEFT;
+            PlatformControllerInput::updateHttpDpadLeft(true);
 
             return;
         }
 
         if (message == "button:LEFT:released") {
-
-            s_controllerInput.dpad &= ~PlatformControllerDpad::LEFT;
-            s_controllerInput.dpadReleased |= PlatformControllerDpad::LEFT;
+            PlatformControllerInput::updateHttpDpadLeft(false);
 
             return;
         }
@@ -198,17 +174,13 @@ namespace {
         // D-Pad RIGHT
         // ---------------------------------------------------------
         if (message == "button:RIGHT:pressed") {
-
-            s_controllerInput.dpad |= PlatformControllerDpad::RIGHT;
-            s_controllerInput.dpadPressed |= PlatformControllerDpad::RIGHT;
+            PlatformControllerInput::updateHttpDpadRight(true);
 
             return;
         }
 
         if (message == "button:RIGHT:released") {
-
-            s_controllerInput.dpad &= ~PlatformControllerDpad::RIGHT;
-            s_controllerInput.dpadReleased |= PlatformControllerDpad::RIGHT;
+            PlatformControllerInput::updateHttpDpadRight(false);
 
             return;
         }
@@ -225,8 +197,7 @@ namespace {
                 int x = message.substring(11, firstColon).toInt();
                 int y = message.substring(firstColon + 1).toInt();
 
-                s_controllerInput.leftStickX = constrain(x, -100, 100);
-                s_controllerInput.leftStickY = constrain(y, -100, 100);
+                PlatformControllerInput::updateHttpLeftStick(x, y);
             }
 
             return;
@@ -245,8 +216,7 @@ namespace {
                 int x = message.substring(12, firstColon).toInt();
                 int y = message.substring(firstColon + 1).toInt();
 
-                s_controllerInput.rightStickX = constrain(x, -100, 100);
-                s_controllerInput.rightStickY = constrain(y, -100, 100);
+                PlatformControllerInput::updateHttpRightStick(x, y);
             }
 
             return;
@@ -282,8 +252,6 @@ namespace {
 
                 s_webSocketConnected = false;
                 s_webSocketTimeout = true;
-
-                s_controllerInput = {};
 
                 break;
             }
@@ -356,15 +324,7 @@ namespace PlatformHttp {
     // HTTPリクエスト、WebSocket通信、接続Timeoutを処理する。
     // ---------------------------------------------------------
     void update()
-    {
-        // 前回周期の押下・解放イベントをクリア
-        s_controllerInput.buttonsPressed = 0;
-        s_controllerInput.buttonsReleased = 0;
-        s_controllerInput.dpadPressed = 0;
-        s_controllerInput.dpadReleased = 0;
-        s_controllerInput.miscButtonsPressed = 0;
-        s_controllerInput.miscButtonsReleased = 0;
-        
+    {   
         // HTTP
         s_server.handleClient();
 
@@ -380,7 +340,7 @@ namespace PlatformHttp {
         }
         // Timeout時は全入力を安全側へ
         if (s_webSocketTimeout) {
-            s_controllerInput = {};
+            PlatformControllerInput::clearHttpControllerInput();
         }
     }
 
@@ -417,14 +377,6 @@ namespace PlatformHttp {
     bool isControllerConnected()
     {
         return s_webSocketConnected && !s_webSocketTimeout;
-    }
-
-    // ---------------------------------------------------------
-    // Webコントローラ入力を取得
-    // ---------------------------------------------------------
-    PlatformControllerInput getControllerInput()
-    {
-        return s_controllerInput;
     }
 
     // ---------------------------------------------------------

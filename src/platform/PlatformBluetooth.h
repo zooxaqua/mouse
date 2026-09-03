@@ -1,3 +1,6 @@
+// PlatformBluetooth.h
+// Bluepad32を使用したBluetoothコントローラ入力処理
+
 #ifndef PLATFORMBLUETOOTH_H
 #define PLATFORMBLUETOOTH_H
 
@@ -9,8 +12,6 @@ namespace PlatformBluetooth {
     void update();                                  // Bluetooth入力更新処理
 
     bool isControllerConnected();                   // コントローラ接続状態を取得
-
-    PlatformControllerInput getControllerInput();   // コントローラ入力を取得
 
 }
 

@@ -975,7 +975,7 @@ RTE は Application と Platform の間の変換を担当する。
 
 **# 16. Controller Input**
 
-Platform から RTE へは \`PlatformControllerInput\` を渡す。
+Platform から RTE へは \`PlatformControllerData\` を渡す。
 
 \`\`\` text
 
@@ -1005,7 +1005,7 @@ Misc Buttons Released
 
 Bluetooth と HTTP/WebSocket の入力は、どちらも同じ
 
-\`PlatformControllerInput\` に変換する。
+\`PlatformControllerData\` に変換する。
 
 \------------------------------------------------------------------------
 
@@ -1249,7 +1249,7 @@ PlatformBluetooth
 
     ↓
 
-PlatformControllerInput
+PlatformControllerData
 
     ↓
 
@@ -1341,7 +1341,7 @@ PlatformHttp
 
     ↓
 
-PlatformControllerInput
+PlatformControllerData
 
     ↓
 
@@ -1857,7 +1857,7 @@ PlatformBluetooth
 
         ↓
 
-PlatformControllerInput
+PlatformControllerData
 
         ↓
 
@@ -1889,7 +1889,7 @@ PlatformHttp
 
         ↓
 
-PlatformControllerInput
+PlatformControllerData
 
         ↓
 
@@ -2405,7 +2405,7 @@ Bluetooth ─→ PlatformBluetooth ──┐
 
                                  ↓
 
-                          PlatformControllerInput
+                          PlatformControllerData
 
                                  ↑
 

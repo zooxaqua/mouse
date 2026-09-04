@@ -1080,11 +1080,11 @@ Bluetooth と HTTP/WebSocket の入力は、どちらも同じ
 
 \\\`\\\`\\\` cpp
 
-ButtonState getButtonState(AppButton button);
+ButtonState getButtonState(uint32_t button);
 
-ButtonState getMiscButtonState(AppMiscButton button);
+ButtonState getMiscButtonState(uint8_t button);
 
-ButtonState getDpadState(AppDpad dpad);
+ButtonState getDpadState(uint8_t dpad);
 
 StickValue getStickValue(AppStick stick);
 

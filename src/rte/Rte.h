@@ -6,39 +6,12 @@
 
 #include <stdint.h>
 
-// APP向けボタン定義（これは抽象化したボタン配置）
-enum class AppButton : uint8_t {
-    A,
-    B,
-    X,
-    Y,
-    R1,
-    L1,
-    R2,
-    L2,
-    R3,
-    L3
-};
-enum class AppMiscButton : uint8_t {
-    HOME,
-    MINUS,
-    PLUS,
-    PICT
-};
-
 enum class AppStick : uint8_t {
     LEFT,
     RIGHT
 };
 
-// APPへ返す十字キー状態
-enum class AppDpad : uint8_t {
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT
-};
-
+// APPへ返すボタン状態
 enum class ButtonState : uint8_t {
     NONE     = 0x00,  // 押されていない
     PRESSED  = 0x01,  // 今回押された
@@ -74,9 +47,9 @@ namespace Rte {
     void setLedBlue();                                      // LEDを青にする
     void setLedOff();                                       // LEDを消灯する
 
-    ButtonState getButtonState(AppButton button);           // ボタン状態を取得
-    ButtonState getMiscButtonState(AppMiscButton button);   // Miscボタン状態を取得
-    ButtonState getDpadState(AppDpad dpad);                 // D-Pad状態を取得
+    ButtonState getButtonState(uint32_t buttonMask);        // ボタン状態を取得
+    ButtonState getMiscButtonState(uint8_t buttonMask);     // Miscボタン状態を取得
+    ButtonState getDpadState(uint8_t dpadMask);             // D-Pad状態を取得
     StickValue getStickValue(AppStick stick);               // スティック状態を取得
     DriveInput getDriveInput();                             // 走行入力を取得
     

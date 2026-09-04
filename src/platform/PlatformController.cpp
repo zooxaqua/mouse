@@ -200,6 +200,10 @@ namespace PlatformController
     void clearBluetoothControllerInput()
     {
         s_bluetoothControllerInput = {};
+
+        s_previousButtons = 0;
+        s_previousDpad = 0;
+        s_previousMiscButtons = 0;
     }
 
     // ---------------------------------------------------------

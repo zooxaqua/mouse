@@ -1,4 +1,4 @@
-//PlatformController.cpp
+//PlatformController.h
 // コントローラ入力情報の定義
 
 #pragma once
@@ -65,11 +65,6 @@ struct PlatformControllerData {
     uint8_t miscButtonsPressed;
     uint8_t miscButtonsReleased;
 };
-
-// Controller Mapping
-extern const PlatformControllerButtonMap g_switchButtonMap;
-extern const PlatformControllerDpadMap g_switchDpadMap;
-extern const PlatformControllerMiscButtonMap g_switchMiscButtonMap;
 
 // Current Controller Map
 extern const PlatformControllerButtonMap* g_platformControllerButtonMap;

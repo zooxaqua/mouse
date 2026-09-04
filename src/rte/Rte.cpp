@@ -3,8 +3,6 @@
 
 #include "Rte.h"
 #include "../platform/Platform.h"
-#include "../platform/PlatformConfig.h"
-#include "../platform/PlatformBluetooth.h"
 #include "../platform/PlatformController.h"
 #include "../platform/PlatformHttp.h"
 #include <Arduino.h>
@@ -279,14 +277,14 @@ namespace Rte {
         s_driveInput.steeringRatio = static_cast<int16_t>(stickL.x);
 
         // 出力：Aボタン押下中は出力100
-        if (getButtonState(g_switchButtonMap.A) == ButtonState::HOLD ||
-            getButtonState(g_switchButtonMap.A) == ButtonState::PRESSED) {
+        if (getButtonState(g_platformControllerButtonMap->A) == ButtonState::HOLD ||
+            getButtonState(g_platformControllerButtonMap->A) == ButtonState::PRESSED) {
             s_driveInput.output = 100;
         }
 
         // 出力：Bボタン押下中はブレーキ
-        if (getButtonState(g_switchButtonMap.B) == ButtonState::HOLD ||
-            getButtonState(g_switchButtonMap.B) == ButtonState::PRESSED) {
+        if (getButtonState(g_platformControllerButtonMap->B) == ButtonState::HOLD ||
+            getButtonState(g_platformControllerButtonMap->B) == ButtonState::PRESSED) {
             s_driveInput.brake = true;
         }
         // デバッグ出力
@@ -328,86 +326,86 @@ namespace Rte {
             }
         }
 
-        // 通常ボタン
-    if (getButtonState(g_switchButtonMap.A) != ButtonState::NONE) {
-        Serial.printf("[BUTTON] A: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.A)));
-    }
+            // 通常ボタン
+        if (getButtonState(g_platformControllerButtonMap->A) != ButtonState::NONE) {
+            Serial.printf("[BUTTON] A: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_platformControllerButtonMap->A)));
+        }
 
-    if (getButtonState(g_switchButtonMap.B) != ButtonState::NONE) {
-        Serial.printf("[BUTTON] B: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.B)));
-    }
+        if (getButtonState(g_platformControllerButtonMap->B) != ButtonState::NONE) {
+            Serial.printf("[BUTTON] B: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_platformControllerButtonMap->B)));
+        }
 
-    if (getButtonState(g_switchButtonMap.X) != ButtonState::NONE) {
-        Serial.printf("[BUTTON] X: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.X)));
-    }
+        if (getButtonState(g_platformControllerButtonMap->X) != ButtonState::NONE) {
+            Serial.printf("[BUTTON] X: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_platformControllerButtonMap->X)));
+        }
 
-    if (getButtonState(g_switchButtonMap.Y) != ButtonState::NONE) {
-        Serial.printf("[BUTTON] Y: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.Y)));
-    }
+        if (getButtonState(g_platformControllerButtonMap->Y) != ButtonState::NONE) {
+            Serial.printf("[BUTTON] Y: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_platformControllerButtonMap->Y)));
+        }
 
-    if (getButtonState(g_switchButtonMap.R1) != ButtonState::NONE) {
-        Serial.printf("[BUTTON] R1: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.R1)));
-    }
+        if (getButtonState(g_platformControllerButtonMap->R1) != ButtonState::NONE) {
+            Serial.printf("[BUTTON] R1: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_platformControllerButtonMap->R1)));
+        }
 
-    if (getButtonState(g_switchButtonMap.L1) != ButtonState::NONE) {
-        Serial.printf("[BUTTON] L1: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.L1)));
-    }
+        if (getButtonState(g_platformControllerButtonMap->L1) != ButtonState::NONE) {
+            Serial.printf("[BUTTON] L1: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_platformControllerButtonMap->L1)));
+        }
 
-    if (getButtonState(g_switchButtonMap.R2) != ButtonState::NONE) {
-        Serial.printf("[BUTTON] R2: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.R2)));
-    }
+        if (getButtonState(g_platformControllerButtonMap->R2) != ButtonState::NONE) {
+            Serial.printf("[BUTTON] R2: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_platformControllerButtonMap->R2)));
+        }
 
-    if (getButtonState(g_switchButtonMap.L2) != ButtonState::NONE) {
-        Serial.printf("[BUTTON] L2: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.L2)));
-    }
+        if (getButtonState(g_platformControllerButtonMap->L2) != ButtonState::NONE) {
+            Serial.printf("[BUTTON] L2: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_platformControllerButtonMap->L2)));
+        }
 
-    if (getButtonState(g_switchButtonMap.R3) != ButtonState::NONE) {
-        Serial.printf("[BUTTON] R3: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.R3)));
-    }
+        if (getButtonState(g_platformControllerButtonMap->R3) != ButtonState::NONE) {
+            Serial.printf("[BUTTON] R3: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_platformControllerButtonMap->R3)));
+        }
 
-    if (getButtonState(g_switchButtonMap.L3) != ButtonState::NONE) {
-        Serial.printf("[BUTTON] L3: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_switchButtonMap.L3)));
-    }
+        if (getButtonState(g_platformControllerButtonMap->L3) != ButtonState::NONE) {
+            Serial.printf("[BUTTON] L3: 0x%02X\n", static_cast<uint8_t>(getButtonState(g_platformControllerButtonMap->L3)));
+        }
         // MISCボタン
-        if (getMiscButtonState(g_switchMiscButtonMap.HOME) != ButtonState::NONE) {
+        if (getMiscButtonState(g_platformControllerMiscButtonMap->HOME) != ButtonState::NONE) {
             Serial.printf("[MISC] HOME: 0x%02X\n",
-                        static_cast<uint8_t>(getMiscButtonState(g_switchMiscButtonMap.HOME)));
+                        static_cast<uint8_t>(getMiscButtonState(g_platformControllerMiscButtonMap->HOME)));
         }
 
-        if (getMiscButtonState(g_switchMiscButtonMap.MINUS) != ButtonState::NONE) {
+        if (getMiscButtonState(g_platformControllerMiscButtonMap->MINUS) != ButtonState::NONE) {
             Serial.printf("[MISC] MINUS: 0x%02X\n",
-                        static_cast<uint8_t>(getMiscButtonState(g_switchMiscButtonMap.MINUS)));
+                        static_cast<uint8_t>(getMiscButtonState(g_platformControllerMiscButtonMap->MINUS)));
         }
 
-        if (getMiscButtonState(g_switchMiscButtonMap.PLUS) != ButtonState::NONE) {
+        if (getMiscButtonState(g_platformControllerMiscButtonMap->PLUS) != ButtonState::NONE) {
             Serial.printf("[MISC] PLUS: 0x%02X\n",
-                        static_cast<uint8_t>(getMiscButtonState(g_switchMiscButtonMap.PLUS)));
+                        static_cast<uint8_t>(getMiscButtonState(g_platformControllerMiscButtonMap->PLUS)));
         }
 
-        if (getMiscButtonState(g_switchMiscButtonMap.PICT) != ButtonState::NONE) {
+        if (getMiscButtonState(g_platformControllerMiscButtonMap->PICT) != ButtonState::NONE) {
             Serial.printf("[MISC] PICT: 0x%02X\n",
-                        static_cast<uint8_t>(getMiscButtonState(g_switchMiscButtonMap.PICT)));
+                        static_cast<uint8_t>(getMiscButtonState(g_platformControllerMiscButtonMap->PICT)));
         }
 
         // D-Pad
-        if (getDpadState(g_switchDpadMap.UP) != ButtonState::NONE) {
+        if (getDpadState(g_platformControllerDpadMap->UP) != ButtonState::NONE) {
             Serial.printf("[DPAD] UP: 0x%02X\n",
-                        static_cast<uint8_t>(getDpadState(g_switchDpadMap.UP)));
+                        static_cast<uint8_t>(getDpadState(g_platformControllerDpadMap->UP)));
         }
 
-        if (getDpadState(g_switchDpadMap.DOWN) != ButtonState::NONE) {
+        if (getDpadState(g_platformControllerDpadMap->DOWN) != ButtonState::NONE) {
             Serial.printf("[DPAD] DOWN: 0x%02X\n",
-                        static_cast<uint8_t>(getDpadState(g_switchDpadMap.DOWN)));
+                        static_cast<uint8_t>(getDpadState(g_platformControllerDpadMap->DOWN)));
         }
 
-        if (getDpadState(g_switchDpadMap.LEFT) != ButtonState::NONE) {
+        if (getDpadState(g_platformControllerDpadMap->LEFT) != ButtonState::NONE) {
             Serial.printf("[DPAD] LEFT: 0x%02X\n",
-                        static_cast<uint8_t>(getDpadState(g_switchDpadMap.LEFT)));
+                        static_cast<uint8_t>(getDpadState(g_platformControllerDpadMap->LEFT)));
         }
 
-        if (getDpadState(g_switchDpadMap.RIGHT) != ButtonState::NONE) {
+        if (getDpadState(g_platformControllerDpadMap->RIGHT) != ButtonState::NONE) {
             Serial.printf("[DPAD] RIGHT: 0x%02X\n",
-                        static_cast<uint8_t>(getDpadState(g_switchDpadMap.RIGHT)));
+                        static_cast<uint8_t>(getDpadState(g_platformControllerDpadMap->RIGHT)));
         }
     }
 

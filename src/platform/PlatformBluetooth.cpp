@@ -64,7 +64,6 @@ namespace {
             return;
         }
 
-        //引数はs_controllerだけでよくない？
         PlatformController::updateBlueToothControllerInput(
             s_controller->axisX(),
             s_controller->axisY(),

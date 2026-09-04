@@ -1,6 +1,7 @@
 #workspace
 .pio
 .vscode/
+diff.txt
 
 # macOS
 .DS_Store

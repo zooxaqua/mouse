@@ -28,10 +28,10 @@ namespace {
             Serial.printf("[BT] Is Keyboard: %d\n", ctl->isKeyboard());
 
             // 現在はSwitchコントローラとしてMAPを設定（仮）
-            PlatformControllerInput::setControllerType(PlatformControllerType::SWITCH);
+            PlatformController::setControllerType(PlatformControllerType::SWITCH);
 
             // コントローラ接続状態を通知
-            PlatformControllerInput::setControllerConnected(true);
+            PlatformController::setControllerConnected(true);
         }
     }
 
@@ -48,7 +48,7 @@ namespace {
             s_controller = nullptr;
 
             // コントローラ接続状態を通知
-            PlatformControllerInput::setControllerConnected(false);
+            PlatformController::setControllerConnected(false);
         }
     }
     // ---------------------------------------------------------
@@ -65,7 +65,7 @@ namespace {
         }
 
         //引数はs_controllerだけでよくない？
-        PlatformControllerInput::updateBlueToothControllerInput(
+        PlatformController::updateBlueToothControllerInput(
             s_controller->axisX(),
             s_controller->axisY(),
             s_controller->axisRX(),

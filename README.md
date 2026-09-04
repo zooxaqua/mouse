@@ -202,7 +202,7 @@ Application側では加速・減速・ブレーキ・操舵を考慮した最終
 
 Bluepad32を使用しています。
 
-コントローラ入力はPlatform層で取得し、`PlatformControllerInput` に統一します。
+コントローラ入力はPlatform層で取得し、`PlatformController` に統一します。
 
 入力には以下があります。
 

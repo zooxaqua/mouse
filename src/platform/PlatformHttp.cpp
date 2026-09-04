@@ -2,7 +2,7 @@
 // HTTP通信を使用したコントローラ入力処理
 
 #include "PlatformHttp.h"
-#include "PlatformControllerInput.h"
+#include "PlatformController.h"
 #include <WebServer.h>
 #include <WebSocketsServer.h>
 #include <LittleFS.h>
@@ -70,13 +70,13 @@ namespace {
         // A
         // ---------------------------------------------------------
         if (message == "button:A:pressed") {
-            PlatformControllerInput::updateHttpButtonA(true);
+            PlatformController::updateHttpButtonA(true);
 
             return;
         }
 
         if (message == "button:A:released") {
-            PlatformControllerInput::updateHttpButtonA(false);
+            PlatformController::updateHttpButtonA(false);
 
             return;
         }
@@ -85,13 +85,13 @@ namespace {
         // B
         // ---------------------------------------------------------
         if (message == "button:B:pressed") {
-            PlatformControllerInput::updateHttpButtonB(true);
+            PlatformController::updateHttpButtonB(true);
 
             return;
         }
 
         if (message == "button:B:released") {
-            PlatformControllerInput::updateHttpButtonB(false);
+            PlatformController::updateHttpButtonB(false);
 
             return;
         }
@@ -100,13 +100,13 @@ namespace {
         // X
         // ---------------------------------------------------------
         if (message == "button:X:pressed") {
-            PlatformControllerInput::updateHttpButtonX(true);
+            PlatformController::updateHttpButtonX(true);
 
             return;
         }
 
         if (message == "button:X:released") {
-            PlatformControllerInput::updateHttpButtonX(false);
+            PlatformController::updateHttpButtonX(false);
 
             return;
         }
@@ -115,13 +115,13 @@ namespace {
         // Y
         // ---------------------------------------------------------
         if (message == "button:Y:pressed") {
-            PlatformControllerInput::updateHttpButtonY(true);
+            PlatformController::updateHttpButtonY(true);
 
             return;
         }
 
         if (message == "button:Y:released") {
-            PlatformControllerInput::updateHttpButtonY(false);
+            PlatformController::updateHttpButtonY(false);
 
             return;
         }
@@ -129,13 +129,13 @@ namespace {
         // D-Pad UP
         // ---------------------------------------------------------
         if (message == "button:UP:pressed") {
-            PlatformControllerInput::updateHttpDpadUp(true);
+            PlatformController::updateHttpDpadUp(true);
 
             return;
         }
 
         if (message == "button:UP:released") {
-            PlatformControllerInput::updateHttpDpadUp(false);
+            PlatformController::updateHttpDpadUp(false);
 
             return;
         }
@@ -144,13 +144,13 @@ namespace {
         // D-Pad DOWN
         // ---------------------------------------------------------
         if (message == "button:DOWN:pressed") {
-            PlatformControllerInput::updateHttpDpadDown(true);
+            PlatformController::updateHttpDpadDown(true);
 
             return;
         }
 
         if (message == "button:DOWN:released") {
-            PlatformControllerInput::updateHttpDpadDown(false);
+            PlatformController::updateHttpDpadDown(false);
 
             return;
         }
@@ -159,13 +159,13 @@ namespace {
         // D-Pad LEFT
         // ---------------------------------------------------------
         if (message == "button:LEFT:pressed") {
-            PlatformControllerInput::updateHttpDpadLeft(true);
+            PlatformController::updateHttpDpadLeft(true);
 
             return;
         }
 
         if (message == "button:LEFT:released") {
-            PlatformControllerInput::updateHttpDpadLeft(false);
+            PlatformController::updateHttpDpadLeft(false);
 
             return;
         }
@@ -174,13 +174,13 @@ namespace {
         // D-Pad RIGHT
         // ---------------------------------------------------------
         if (message == "button:RIGHT:pressed") {
-            PlatformControllerInput::updateHttpDpadRight(true);
+            PlatformController::updateHttpDpadRight(true);
 
             return;
         }
 
         if (message == "button:RIGHT:released") {
-            PlatformControllerInput::updateHttpDpadRight(false);
+            PlatformController::updateHttpDpadRight(false);
 
             return;
         }
@@ -197,7 +197,7 @@ namespace {
                 int x = message.substring(11, firstColon).toInt();
                 int y = message.substring(firstColon + 1).toInt();
 
-                PlatformControllerInput::updateHttpLeftStick(x, y);
+                PlatformController::updateHttpLeftStick(x, y);
             }
 
             return;
@@ -216,7 +216,7 @@ namespace {
                 int x = message.substring(12, firstColon).toInt();
                 int y = message.substring(firstColon + 1).toInt();
 
-                PlatformControllerInput::updateHttpRightStick(x, y);
+                PlatformController::updateHttpRightStick(x, y);
             }
 
             return;
@@ -340,7 +340,7 @@ namespace PlatformHttp {
         }
         // Timeout時は全入力を安全側へ
         if (s_webSocketTimeout) {
-            PlatformControllerInput::clearHttpControllerInput();
+            PlatformController::clearHttpControllerInput();
         }
     }
 

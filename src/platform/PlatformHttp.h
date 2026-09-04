@@ -4,8 +4,6 @@
 #ifndef PLATFORMHTTP_H
 #define PLATFORMHTTP_H
 
-#include "PlatformControllerInput.h"
-
 namespace PlatformHttp {
 
     void init();                                    // HTTP / WebSocket初期化処理

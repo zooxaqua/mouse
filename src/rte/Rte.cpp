@@ -5,7 +5,7 @@
 #include "../platform/Platform.h"
 #include "../platform/PlatformConfig.h"
 #include "../platform/PlatformBluetooth.h"
-#include "../platform/PlatformControllerInput.h"
+#include "../platform/PlatformController.h"
 #include "../platform/PlatformHttp.h"
 #include <Arduino.h>
 
@@ -82,7 +82,7 @@ namespace Rte {
     // ---------------------------------------------------------
     void updateInput()
     {
-        if (PlatformControllerInput::isControllerConnected()) {
+        if (PlatformController::isControllerConnected()) {
             updateDriveInput();
         }
         else {
@@ -116,7 +116,7 @@ namespace Rte {
     bool isControllerConnected()
     {
         
-        return PlatformControllerInput::isControllerConnected() || PlatformHttp::isControllerConnected();
+        return PlatformController::isControllerConnected() || PlatformHttp::isControllerConnected();
     }
 
     // ---------------------------------------------------------
@@ -124,7 +124,7 @@ namespace Rte {
     // ---------------------------------------------------------
     ButtonState getButtonState(uint32_t buttonMask)
     {
-        PlatformControllerData input = PlatformControllerInput::getControllerInput();
+        PlatformControllerData input = PlatformController::getControllerInput();
 
         if (input.buttonsPressed & buttonMask) {
             return ButtonState::PRESSED;
@@ -146,7 +146,7 @@ namespace Rte {
     // ---------------------------------------------------------
     ButtonState getMiscButtonState(uint8_t buttonMask)
     {
-        PlatformControllerData input = PlatformControllerInput::getControllerInput();
+        PlatformControllerData input = PlatformController::getControllerInput();
 
         if (input.miscButtonsPressed & buttonMask) {
             return ButtonState::PRESSED;
@@ -168,7 +168,7 @@ namespace Rte {
     // ---------------------------------------------------------
     ButtonState getDpadState(uint8_t dpadMask)
     {
-        PlatformControllerData input = PlatformControllerInput::getControllerInput();
+        PlatformControllerData input = PlatformController::getControllerInput();
 
         if (input.dpadPressed & dpadMask) {
             return ButtonState::PRESSED;
@@ -190,7 +190,7 @@ namespace Rte {
     // ---------------------------------------------------------
     StickValue getStickValue(AppStick stick)
     {
-        PlatformControllerData input = PlatformControllerInput::getControllerInput();
+        PlatformControllerData input = PlatformController::getControllerInput();
 
         if (stick == AppStick::LEFT) {
             return {

@@ -1148,7 +1148,7 @@ else {
 
 \\\`\\\`\\\`
 
-Bluetooth / HTTP の入力ソース選択は PlatformControllerInput の責務であり、RTE は統一された PlatformControllerData を取得する。
+Bluetooth / HTTP の入力ソース選択は PlatformController の責務であり、RTE は統一された PlatformControllerData を取得する。
 
 \\------------------------------------------------------------------------
 
@@ -1928,7 +1928,7 @@ PlatformBluetooth
 
         ↓
 
-PlatformControllerInput
+PlatformController
 
         ↓
 
@@ -1964,7 +1964,7 @@ PlatformHttp
 
         ↓
 
-PlatformControllerInput
+PlatformController
 
         ↓
 
@@ -2719,14 +2719,14 @@ Bluetooth / Wi-Fi / HTTP / WebSocket
 ## 53.1 入力統一
 
 Bluetooth と HTTP/WebSocket は、Platform 内でそれぞれの通信方式を処理した後、
-`PlatformControllerInput` に集約する。
+`PlatformController` に集約する。
 
 ```text
 Bluetooth
     ↓
 PlatformBluetooth
     ↓
-PlatformControllerInput ──┐
+PlatformController ──┐
                            ├→ PlatformControllerData → RTE
 HTTP/WebSocket             │
     ↓                      │
@@ -2769,7 +2769,7 @@ HTTP では HOME / MINUS / PLUS / PICT、および L1 / R1 / L2 / R2 / L3 / R3 �
 ## 53.4 入力周期
 
 HTTP / WebSocket の受信処理は `Platform::updateInput()` 内で処理し、
-100ms の走行入力周期に同期して `PlatformControllerInput::updateControllerInput()`
+100ms の走行入力周期に同期して `PlatformController::updateControllerInput()`
 まで実行する。
 
 1000ms 周期は Controller 入力処理ではなく、Debug 情報送信などの低頻度処理に使用する。

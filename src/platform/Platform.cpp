@@ -5,7 +5,7 @@
 #include "PlatformBluetooth.h"
 #include "PlatformWifi.h"
 #include "PlatformHttp.h"
-#include "PlatformControllerInput.h"
+#include "PlatformController.h"
 #include <Arduino.h>
 
 // 静的メンバ変数
@@ -77,7 +77,7 @@ void Platform::updateInput()
     PlatformHttp::update();
 
     // コントローラ入力を更新
-    PlatformControllerInput::updateControllerInput();
+    PlatformController::updateControllerInput();
 }
 
 // ---------------------------------------------------------

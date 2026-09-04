@@ -1,4 +1,4 @@
-//PlatformControllerInput.cpp
+//PlatformController.cpp
 // コントローラ入力情報の定義
 
 #pragma once
@@ -76,7 +76,7 @@ extern const PlatformControllerButtonMap* g_platformControllerButtonMap;
 extern const PlatformControllerDpadMap* g_platformControllerDpadMap;
 extern const PlatformControllerMiscButtonMap* g_platformControllerMiscButtonMap;
 
-namespace PlatformControllerInput
+namespace PlatformController
 {
     // コントローラ種類を設定する
     void setControllerType(PlatformControllerType type);

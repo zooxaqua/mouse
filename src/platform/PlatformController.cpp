@@ -1,7 +1,7 @@
-//PlatformControllerInput.cpp
+//PlatformController.cpp
 // コントローラ入力情報の定義
 
-#include "PlatformControllerInput.h"
+#include "PlatformController.h"
 #include "PlatformBluetooth.h"
 #include "PlatformHttp.h"
 
@@ -48,7 +48,7 @@ const PlatformControllerButtonMap* g_platformControllerButtonMap = &g_switchButt
 const PlatformControllerDpadMap* g_platformControllerDpadMap = &g_switchDpadMap;
 const PlatformControllerMiscButtonMap* g_platformControllerMiscButtonMap = &g_switchMiscButtonMap;
 
-namespace PlatformControllerInput
+namespace PlatformController
 {
     // =========================================================
     // Controller Input State

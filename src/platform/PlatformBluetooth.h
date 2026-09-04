@@ -4,7 +4,7 @@
 #ifndef PLATFORMBLUETOOTH_H
 #define PLATFORMBLUETOOTH_H
 
-#include "PlatformControllerInput.h"
+#include "PlatformController.h"
 
 namespace PlatformBluetooth {
 

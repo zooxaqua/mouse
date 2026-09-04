@@ -115,8 +115,7 @@ namespace Rte {
     // ---------------------------------------------------------
     bool isControllerConnected()
     {
-        
-        return PlatformController::isControllerConnected() || PlatformHttp::isControllerConnected();
+        return PlatformController::isControllerConnected();
     }
 
     // ---------------------------------------------------------

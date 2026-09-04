@@ -63,8 +63,6 @@ namespace PlatformController
 
     uint32_t s_previousHttpButtons = 0;
     uint8_t s_previousHttpDpad = 0;
-    
-    bool s_controllerConnected = false;
 
     // ---------------------------------------------------------
     // コントローラ入力を更新する
@@ -178,9 +176,13 @@ namespace PlatformController
         s_controllerInput = {};
         s_bluetoothControllerInput = {};
         s_httpControllerInput = {};
+
         s_previousButtons = 0;
         s_previousDpad = 0;
         s_previousMiscButtons = 0;
+
+        s_previousHttpButtons = 0;
+        s_previousHttpDpad = 0;
     }
     // ---------------------------------------------------------
     // HTTPコントローラ入力をクリアする
@@ -213,8 +215,6 @@ namespace PlatformController
     // ---------------------------------------------------------
     void setControllerConnected(bool connected)
     {
-        s_controllerConnected = connected;
-
         if (!connected) {
             clearControllerInput();
         }

@@ -30,10 +30,10 @@ void Platform::init(const PlatformConfig& config)
     PlatformBluetooth::init();
 
     //Wifiを初期化
-    PlatformWifi::init();
+    //PlatformWifi::init();
 
     //HTTPを初期化
-    PlatformHttp::init();
+    //PlatformHttp::init();
 
     // PWMを初期化
     drv_pwmInit(m_config.motor1In1);
@@ -71,10 +71,10 @@ void Platform::updateInput()
     PlatformBluetooth::update();
 
     // Wifi処理
-    PlatformWifi::update();
+    //PlatformWifi::update();
 
     // HTTP / WebSocket入力処理
-    PlatformHttp::update();
+    //PlatformHttp::update();
 
     // コントローラ入力を更新
     PlatformController::updateControllerInput();

@@ -24,10 +24,10 @@ const PlatformConfig g_platformConfig = []() {
     // --- シリアル通信バス ---
 
     // --- モーター制御系 ---
-    cfg.motor1In1 = { 26, PinModeType::PWM_OUT, 0, 5000, 8 }; // G26 → DRV8835 AIN1
-    cfg.motor1In2 = { 18, PinModeType::PWM_OUT, 1, 5000, 8 }; // G18 → DRV8835 AIN2
-    cfg.motor2In1 = { 21, PinModeType::PWM_OUT, 2, 5000, 8 }; // G21 → DRV8835 BIN1
-    cfg.motor2In2 = { 22, PinModeType::PWM_OUT, 3, 5000, 8 }; // G22 → DRV8835 BIN2
+    cfg.motor1In1 = { 26, PinModeType::PWM_OUT, 0, 20000, 8 }; // G26 → DRV8835 AIN1
+    cfg.motor1In2 = { 18, PinModeType::PWM_OUT, 1, 20000, 8 }; // G18 → DRV8835 AIN2
+    cfg.motor2In1 = { 21, PinModeType::PWM_OUT, 2, 20000, 8 }; // G21 → DRV8835 BIN1
+    cfg.motor2In2 = { 22, PinModeType::PWM_OUT, 3, 20000, 8 }; // G22 → DRV8835 BIN2
 
     // --- アナログ入力系 (ADC) ---
 

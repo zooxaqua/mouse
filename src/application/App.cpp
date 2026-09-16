@@ -75,7 +75,7 @@ namespace App {
         // 現在のモータ出力を取得
         // ---------------------------------------------------------
         int8_t currentOutput = s_currentMotorOutput;
-
+        
 
         // ---------------------------------------------------------
         // ブレーキ処理
@@ -134,8 +134,9 @@ namespace App {
         // ---------------------------------------------------------
         else if (abs(currentOutput) > abs(targetOutput)) {
 
-            // 減速特性MAPから今回の減速度を取得
-            int8_t decelerationStep = interpolateMap(AppConfig::g_decelerationMap, targetMagnitude);
+            // 現在モータ出力をXとして減速量を取得
+            int8_t currentMagnitude = static_cast<int8_t>(abs(currentOutput));
+            int8_t decelerationStep = interpolateMap(AppConfig::g_decelerationMap, currentMagnitude);
 
             // 正方向から減速
             if (currentOutput > 0) {
@@ -251,12 +252,12 @@ namespace App {
         // steeringRatio < 0 : 右旋回
         // ---------------------------------------------------------
         if (driveInput.steeringRatio > 0) {
-            driveOutput.motorRightOutput = baseMotorOutput;
-            driveOutput.motorLeftOutput  = innerMotorOutput;
-        }
-        else {
             driveOutput.motorRightOutput = innerMotorOutput;
             driveOutput.motorLeftOutput  = baseMotorOutput;
+        }
+        else {
+            driveOutput.motorRightOutput = baseMotorOutput;
+            driveOutput.motorLeftOutput  = innerMotorOutput;
         }
 
         return driveOutput;

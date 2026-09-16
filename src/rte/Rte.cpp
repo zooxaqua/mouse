@@ -14,7 +14,7 @@ namespace {
     bool s_shutdownRequested = false;
 
     DriveInput s_driveInput = {};
-
+    
     // ■OUTPUT
     struct DriveCommand {
         int8_t motorRightOutput;
@@ -30,8 +30,33 @@ namespace {
     {
         int8_t motorRightOutput = s_driveCommand.motorRightOutput;
         int8_t motorLeftOutput  = s_driveCommand.motorLeftOutput;
+        
+        uint32_t now = millis();
 
+        // ---------------------------------------------------------
+        // モーターPWM変換
+        // 0% → 0%
+        // 1〜100% → 70〜100%
+        // ---------------------------------------------------------
+        if (motorRightOutput > 0) {
+            motorRightOutput = 70 + (motorRightOutput * 30 / 100);
+        }
+        else if (motorRightOutput < 0) {
+            motorRightOutput = -(70 + ((-motorRightOutput) * 30 / 100));
+        }
+
+        if (motorLeftOutput > 0) {
+            motorLeftOutput = 70 + (motorLeftOutput * 30 / 100);
+        }
+        else if (motorLeftOutput < 0) {
+            motorLeftOutput = -(70 + ((-motorLeftOutput) * 30 / 100));
+        }
+
+        //Serial.printf( "[RTE MOTOR] Right:%4d Left:%4d\n", motorRightOutput, motorLeftOutput);
+
+        // ---------------------------------------------------------
         // モーター1（右）
+        // ---------------------------------------------------------
         if (motorRightOutput >= 0) {
             Platform::setPwmDuty(PwmOutput::MOTOR1_IN1, static_cast<uint8_t>(motorRightOutput));
             Platform::setPwmDuty(PwmOutput::MOTOR1_IN2, 0);
@@ -41,7 +66,9 @@ namespace {
             Platform::setPwmDuty(PwmOutput::MOTOR1_IN2, static_cast<uint8_t>(-motorRightOutput));
         }
 
+        // ---------------------------------------------------------
         // モーター2（左）
+        // ---------------------------------------------------------
         if (motorLeftOutput >= 0) {
             Platform::setPwmDuty(PwmOutput::MOTOR2_IN1, static_cast<uint8_t>(motorLeftOutput));
             Platform::setPwmDuty(PwmOutput::MOTOR2_IN2, 0);
@@ -51,6 +78,7 @@ namespace {
             Platform::setPwmDuty(PwmOutput::MOTOR2_IN2, static_cast<uint8_t>(-motorLeftOutput));
         }
     }
+
 }
 
 namespace Rte {

@@ -84,6 +84,8 @@ void Platform::updateInput()
 // Platform出力処理
 // ---------------------------------------------------------
 void Platform::updateOutput() {
+    //Serial.printf( "[PLATFORM PWM] M1:%d/%d M2:%d/%d\n", m_outBuf.m1In1Duty, m_outBuf.m1In2Duty, m_outBuf.m2In1Duty, m_outBuf.m2In2Duty);
+
     // ■端子処理
     // モーター1（AIN1 / AIN2）
     drv_pwmWrite(m_config.motor1In1, m_outBuf.m1In1Duty);
@@ -215,9 +217,12 @@ void Platform::drv_pwmInit(const PinConfig& cfg) {
 // ---------------------------------------------------------
 // PWM出力を物理デバイスへ書き込む
 // ---------------------------------------------------------
-void Platform::drv_pwmWrite(const PinConfig& cfg, uint8_t dutyPercent) {
+void Platform::drv_pwmWrite(const PinConfig& cfg, uint8_t dutyPercent)
+{
     if (cfg.mode != PinModeType::PWM_OUT) return;
+
     uint32_t rawDuty = (dutyPercent * 255) / 100;
+
     ledcWrite(cfg.pwmChannel, rawDuty);
 }
 

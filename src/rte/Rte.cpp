@@ -24,36 +24,90 @@ namespace {
     DriveCommand s_driveCommand = {};
 
     // ---------------------------------------------------------
+    // APP出力 → PWM出力 変換
+    // ---------------------------------------------------------
+    constexpr int8_t MOTOR_PWM_MIN = 10;
+    constexpr int8_t MOTOR_PWM_MAX = 100;
+
+    // ---------------------------------------------------------
+    // モーター起動ブースト設定
+    // ---------------------------------------------------------
+    constexpr int8_t MOTOR_START_DUTY = 70;
+    constexpr int8_t MOTOR_OUTPUT_STEP = 10;
+
+    // 現在のモーター出力
+    // [0] = 右、[1] = 左
+    int8_t s_currentMotorOutput[2] = {0, 0};
+
+    // ---------------------------------------------------------
     // 走行指令をモーター出力へ変換
     // ---------------------------------------------------------
     void updateMotorOutput()
     {
         int8_t motorRightOutput = s_driveCommand.motorRightOutput;
         int8_t motorLeftOutput  = s_driveCommand.motorLeftOutput;
-        
-        uint32_t now = millis();
 
         // ---------------------------------------------------------
-        // モーターPWM変換
-        // 0% → 0%
-        // 1〜100% → 70〜100%
+        // APP出力 0～100% → PWM出力 0～50～100%
         // ---------------------------------------------------------
         if (motorRightOutput > 0) {
-            motorRightOutput = 70 + (motorRightOutput * 30 / 100);
+            motorRightOutput = MOTOR_PWM_MIN + (motorRightOutput * (MOTOR_PWM_MAX - MOTOR_PWM_MIN) / 100);
         }
         else if (motorRightOutput < 0) {
-            motorRightOutput = -(70 + ((-motorRightOutput) * 30 / 100));
+            motorRightOutput = -(MOTOR_PWM_MIN + ((-motorRightOutput) * (MOTOR_PWM_MAX - MOTOR_PWM_MIN) / 100));
         }
 
         if (motorLeftOutput > 0) {
-            motorLeftOutput = 70 + (motorLeftOutput * 30 / 100);
+            motorLeftOutput = MOTOR_PWM_MIN + (motorLeftOutput * (MOTOR_PWM_MAX - MOTOR_PWM_MIN) / 100);
         }
         else if (motorLeftOutput < 0) {
-            motorLeftOutput = -(70 + ((-motorLeftOutput) * 30 / 100));
+            motorLeftOutput = -(MOTOR_PWM_MIN + ((-motorLeftOutput) * (MOTOR_PWM_MAX - MOTOR_PWM_MIN) / 100));
         }
 
-        //Serial.printf( "[RTE MOTOR] Right:%4d Left:%4d\n", motorRightOutput, motorLeftOutput);
+        // ---------------------------------------------------------
+        // モーター出力を指示値へ徐々に追従
+        // ---------------------------------------------------------
+        int8_t motorOutput[2] = {
+            motorRightOutput,
+            motorLeftOutput
+        };
 
+        for (int i = 0; i < 2; i++) {
+
+            int8_t target = motorOutput[i];
+
+            // 停止
+            if (target == 0) {
+                s_currentMotorOutput[i] = 0;
+            }
+
+            // 停止状態からの起動
+            else if (s_currentMotorOutput[i] == 0) {
+                s_currentMotorOutput[i] = (target > 0) ? MOTOR_START_DUTY : -MOTOR_START_DUTY;
+            }
+
+            // 指示値へ徐々に追従
+            else if (s_currentMotorOutput[i] < target) {
+                s_currentMotorOutput[i] += MOTOR_OUTPUT_STEP;
+
+                if (s_currentMotorOutput[i] > target) {
+                    s_currentMotorOutput[i] = target;
+                }
+            }
+            else if (s_currentMotorOutput[i] > target) {
+                s_currentMotorOutput[i] -= MOTOR_OUTPUT_STEP;
+
+                if (s_currentMotorOutput[i] < target) {
+                    s_currentMotorOutput[i] = target;
+                }
+            }
+
+            motorOutput[i] = s_currentMotorOutput[i];
+        }
+
+        motorRightOutput = motorOutput[0];
+        motorLeftOutput  = motorOutput[1];
+        
         // ---------------------------------------------------------
         // モーター1（右）
         // ---------------------------------------------------------
@@ -101,6 +155,8 @@ namespace Rte {
 
         s_driveCommand.motorRightOutput = 0;
         s_driveCommand.motorLeftOutput = 0;
+        s_currentMotorOutput[0] = 0;
+        s_currentMotorOutput[1] = 0;
     }
 
     // ---------------------------------------------------------

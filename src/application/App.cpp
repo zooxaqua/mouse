@@ -104,6 +104,26 @@ namespace App {
             }
         }
         // ---------------------------------------------------------
+        // 正負反転時は、一度0まで減速
+        // ---------------------------------------------------------
+        else if ((currentOutput > 0 && targetOutput < 0) ||
+                (currentOutput < 0 && targetOutput > 0)) {
+
+            // 現在モータ出力をXとして減速量を取得
+            int8_t currentMagnitude = static_cast<int8_t>(abs(currentOutput));
+            int8_t decelerationStep = interpolateMap(AppConfig::g_decelerationMap, currentMagnitude);
+
+            // 0方向へ減速
+            if (currentOutput > 0) {
+                currentOutput -= decelerationStep;
+                currentOutput = max(currentOutput, static_cast<int8_t>(0));
+            }
+            else {
+                currentOutput += decelerationStep;
+                currentOutput = min(currentOutput, static_cast<int8_t>(0));
+            }
+        }
+        // ---------------------------------------------------------
         // モータ出力を入力に合わせて加減速する処理
         // ---------------------------------------------------------
         else if (abs(currentOutput) < abs(targetOutput)) {
